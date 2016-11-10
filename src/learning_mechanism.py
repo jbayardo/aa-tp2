@@ -23,11 +23,36 @@ class LearningMatch(object):
 
             turn = (turn + 1) % 2
 
-        return board
+        winner = -1
+        if turn == 0 and board.is_terminal:
+            #print("Gano el Learning player!")
+            winner = self.learning_player.identifier
+        elif turn == 1 and board.is_terminal:
+            #print("Gano el Teaching player!")
+            winner = self.teaching_player.identifier
+        else:
+            print("Empate de perdedores")
+
+        return board, winner
 
     def train_many_matches(self, matches: int, learning_rate: float, discount_factor: float) -> FourRowAgent:
+        learning_player_matches_won = []
+        teaching_player_matches_won = []
+        ties = []
         for match in range(matches):
-            self.train_single_match(learning_rate, discount_factor)
-            # See who won and plot
+            board, winner = self.train_single_match(learning_rate, discount_factor)
 
-        return self.learning_player
+            if winner == self.learning_player.identifier:
+                learning_player_matches_won.append(1)
+                teaching_player_matches_won.append(0)
+            elif winner == self.teaching_player.identifier:
+                teaching_player_matches_won.append(1)
+                learning_player_matches_won.append(0)
+            else:
+                ties.append(1)
+
+        print("learning matches won:" , sum(learning_player_matches_won))
+        print("teaching matches won:" , sum(teaching_player_matches_won))
+        print("ties: " , sum(ties))
+
+        return self.learning_player, learning_player_matches_won, teaching_player_matches_won

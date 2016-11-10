@@ -6,4 +6,4 @@ if __name__ == '__main__':
     learning_player = FourRowAgent(1)
     teaching_player = FourRowRandomAgent(2)
     trainer = LearningMatch(teaching_player, learning_player)
-    trainer.train_many_matches(10, 0.9, 0.1)
+    learned_player, learning_player_matches_won, teaching_player_matches_won = trainer.train_many_matches(100, 0.9, 0.1)
