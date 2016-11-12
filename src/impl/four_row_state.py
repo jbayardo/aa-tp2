@@ -77,7 +77,7 @@ class FourRowState(State):
 
         # Check vertical
         number_of_contiguous_discs = 0
-        for row in range(self.rows-3):
+        for row in range(self.rows):
 
             if self.state[(row, self.last_column_modified)] == agent_identity:
                 number_of_contiguous_discs += 1
@@ -91,7 +91,7 @@ class FourRowState(State):
 
         # Check horizontal
         number_of_contiguous_discs = 0
-        for column in range(self.columns-3):
+        for column in range(self.columns):
 
             if self.state[(self.last_row_modified, column)] == agent_identity:
                 number_of_contiguous_discs += 1
