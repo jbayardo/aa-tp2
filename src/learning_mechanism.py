@@ -19,7 +19,7 @@ class LearningMatch(object):
                 action = self.teaching_player.policy(board)
                 new_board = board.execute(self.teaching_player, action)
             else:
-                action = self.learning_player.learning_step(board, learning_rate, discount_factor)
+                action = self.learning_player.learning_step(self.teaching_player, board, learning_rate, discount_factor)
                 new_board = board.execute(self.learning_player, action)
 
             del board
@@ -28,12 +28,16 @@ class LearningMatch(object):
             turn = (turn + 1) % 2
             turns += 1
 
+        #board.print_board()
+
         return board.winner, turns
 
     def train_many_matches(self, episodes: int, learning_rate: float, discount_factor: float) -> FourRowAgent:
         samples = []
 
         for episode in range(1, episodes + 1):
+            if episode % 10 == 0:
+                print('Playing episode', episode)
             winner, turns = self.train_single_match(learning_rate, discount_factor)
 
             # Compute average value for the Q

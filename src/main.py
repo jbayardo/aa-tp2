@@ -11,7 +11,7 @@ if __name__ == '__main__':
     learning_player = SoftmaxFourRowAgent(1)
     teaching_player = RandomAgent(2)
     trainer = LearningMatch(teaching_player, learning_player)
-    learned_player, statistics = trainer.train_many_matches(2500, 0.6, 0.3)
+    learned_player, statistics = trainer.train_many_matches(100000, 0.9, 0.3)
 
     data = pd.DataFrame.from_records(statistics, index='episode_number')
     data.to_csv('output.csv')
@@ -36,4 +36,4 @@ if __name__ == '__main__':
         })
 
     data = pd.DataFrame.from_records(data, index='episode_number')
-    data[['won', 'tied']].rolling(window=50).mean().plot().get_figure().savefig('avgs.png')
+    data[['won', 'tied']].rolling(window=20).mean().plot().get_figure().savefig('avgs.png')

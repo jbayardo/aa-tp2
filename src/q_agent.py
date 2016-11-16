@@ -11,10 +11,12 @@ class QAgent(Agent):
         self._q_definition = None
         self._q_initialize()
 
-    def name(self) -> str:
+    def name(self):
         return 'Q Learning Agent'
 
-    def policy(self, state: State) -> Action:
+    def policy(self, state):
+        assert not state.is_terminal
+
         available_actions = state.actions
         scores = [self._q(state, action) for action in available_actions]
 
@@ -32,37 +34,42 @@ class QAgent(Agent):
 
         return self._select_action_from_best(state, selected_actions)
 
-    def _q_initialize(self) -> None:
+    def _q_initialize(self):
         import random
         self._q_definition = defaultdict(random.random)
 
-    def _q_update(self, state: State, action: Action, value: float) -> None:
+    def _q_update(self, state, action, value: float):
         self._q_definition[(state, action)] = value
 
-    def _q(self, state: State, action: Action) -> float:
+    def _q(self, state, action):
         return self._q_definition[(state, action)]
 
-    def _reward(self, state: State, action: Action, new_state: State) -> float:
+    def _reward(self, state, action, new_state):
         raise NotImplementedError()
 
-    def _select_action_from_best(self, state: State, actions: List[Action]) -> Action:
+    def _select_action_from_best(self, state, actions):
         raise NotImplementedError()
 
-    def _select_learning_action(self, state: State) -> Action:
+    def _select_learning_action(self, state):
         raise NotImplementedError()
 
-    def learning_step(self, state: State, learning_rate: float = 0.5, discount_factor: float = 0.1) -> Action:
+    def learning_step(self, oponent, state, learning_rate: float = 0.5, discount_factor: float = 0.1):
         action = self._select_learning_action(state)
         new_state = state.execute(self, action)
         reward = self._reward(state, action, new_state)
 
         try:
-            maximum_factor = max([self._q(new_state, action) for action in new_state.actions])
-        except ValueError:
-            maximum_factor = 0.0
+            new_state = new_state.execute(oponent, oponent.policy(new_state))
 
-        current_q = self._q(state, action)
-        self._q_update(state, action,
-                       current_q + learning_rate * (reward + discount_factor * maximum_factor - current_q))
+            try:
+                maximum_factor = max([self._q(new_state, action) for action in new_state.actions])
+            except ValueError:
+                maximum_factor = 0.0
+
+            current_q = self._q(state, action)
+            self._q_update(state, action,
+                           current_q + learning_rate * (reward + discount_factor * maximum_factor - current_q))
+        except:
+            pass
 
         return action

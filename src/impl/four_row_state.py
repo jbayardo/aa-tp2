@@ -7,7 +7,8 @@ from impl.four_row_action import FourRowAction
 
 class FourRowState(State):
     # TODO: optimize.
-    def __init__(self, rows=8, columns=8):
+    def __init__(self, rows=3, columns=3):
+        self._contiguous_discs = 3
         self._rows = rows
         self._columns = columns
 
@@ -17,7 +18,7 @@ class FourRowState(State):
 
         for row in range(self._rows):
             for column in range(self._columns):
-                self._state[(row, column)] = -1.0
+                self._state[(row, column)] = -1
 
         self._last_row_modified = 0
         self._last_column_modified = 0
@@ -25,15 +26,15 @@ class FourRowState(State):
         self._winner = None
 
     @property
-    def rows(self) -> int:
+    def rows(self):
         return self._rows
 
     @property
-    def columns(self) -> int:
+    def columns(self):
         return self._columns
 
     @property
-    def actions(self) -> List[FourRowAction]:
+    def actions(self):
         return self._actions
 
     @staticmethod
@@ -41,11 +42,16 @@ class FourRowState(State):
         return FourRowState()
 
     def print_board(self):
-        for row in range(self._rows):
+        for row in reversed(range(self._rows)):
             for column in range(self._columns):
-                print(" ", self._state[(row, column)], end=" ")
+                if self._state[(row, column)] == -1:
+                    print("0", end=" ")
+                else:
+                    print(self._state[(row, column)], end=" ")
 
             print("")
+
+        print(" ")
 
     def execute(self, agent, action):
         if action.column >= self._columns:
@@ -92,7 +98,7 @@ class FourRowState(State):
             else:
                 number_of_contiguous_discs = 0
 
-            if number_of_contiguous_discs >= 4:
+            if number_of_contiguous_discs >= self._contiguous_discs:
                 self._winner = agent_identity
                 return agent_identity
 
@@ -105,7 +111,7 @@ class FourRowState(State):
             else:
                 number_of_contiguous_discs = 0
 
-            if number_of_contiguous_discs >= 4:
+            if number_of_contiguous_discs >= self._contiguous_discs:
                 self._winner = agent_identity
                 return agent_identity
 
@@ -126,7 +132,7 @@ class FourRowState(State):
             else:
                 number_of_contiguous_discs = 0
 
-            if number_of_contiguous_discs >= 4:
+            if number_of_contiguous_discs >= self._contiguous_discs:
                 self._winner = agent_identity
                 return agent_identity
 
@@ -150,7 +156,7 @@ class FourRowState(State):
             else:
                 number_of_contiguous_discs = 0
 
-            if number_of_contiguous_discs >= 4:
+            if number_of_contiguous_discs >= self._contiguous_discs:
                 self._winner = agent_identity
                 return agent_identity
 
@@ -172,3 +178,15 @@ class FourRowState(State):
 
         # Check if anyone won
         return self.winner != -1
+
+    # The following are required for dictionary usage
+    def __hash__(self):
+        return hash(frozenset(self._state.items()))
+
+    def __eq__(self, other):
+        return self._state == other._state
+
+    def __ne__(self, other):
+        # Not strictly necessary, but to avoid having both x==y and x!=y
+        # True at the same time
+        return not(self == other)
