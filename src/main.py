@@ -1,5 +1,5 @@
-from impl.four_row_agent import EpsilonGreedyFourRowAgent
-from impl.four_row_random_agent import FourRowRandomAgent
+from impl.four_row_agent import SoftmaxFourRowAgent
+from impl.random_agent import RandomAgent
 from learning_mechanism import LearningMatch
 
 if __name__ == '__main__':
@@ -8,12 +8,32 @@ if __name__ == '__main__':
     import pandas as pd
     matplotlib.style.use('ggplot')
 
-    learning_player = EpsilonGreedyFourRowAgent(1)
-    teaching_player = FourRowRandomAgent(2)
-
+    learning_player = SoftmaxFourRowAgent(1)
+    teaching_player = RandomAgent(2)
     trainer = LearningMatch(teaching_player, learning_player)
-    learned_player, statistics = trainer.train_many_matches(10000, 0.3, 0.7)
-    data = pd.DataFrame.from_records(statistics, index='episode_number')
+    learned_player, statistics = trainer.train_many_matches(2500, 0.6, 0.3)
 
-    plot = data[['avg_by_student', 'avg_by_teacher', 'avg_ties']].plot()
-    plot.get_figure().savefig('output.png')
+    data = pd.DataFrame.from_records(statistics, index='episode_number')
+    data.to_csv('output.csv')
+    data['avg_q'].plot().get_figure().savefig('q_avg.png')
+
+    data = []
+    for entry in statistics:
+        if entry['winner'] == learning_player.identifier:
+            won = 1.0
+        else:
+            won = 0.0
+
+        if entry['winner'] == -1:
+            tied = 1.0
+        else:
+            tied = 0.0
+
+        data.append({
+            'episode_number': entry['episode_number'],
+            'won': won,
+            'tied': tied
+        })
+
+    data = pd.DataFrame.from_records(data, index='episode_number')
+    data[['won', 'tied']].rolling(window=50).mean().plot().get_figure().savefig('avgs.png')

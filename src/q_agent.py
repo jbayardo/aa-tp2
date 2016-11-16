@@ -2,7 +2,6 @@ from typing import List
 from abstract.action import Action
 from abstract.state import State
 from abstract.agent import Agent
-from random import random
 from collections import defaultdict
 
 
@@ -19,7 +18,7 @@ class QAgent(Agent):
         available_actions = state.actions
         scores = [self._q(state, action) for action in available_actions]
 
-        sorted_actions = sorted(zip(available_actions, scores), key=lambda action, q: q)
+        sorted_actions = sorted(zip(available_actions, scores), key=lambda x: x[1])
         reference_score = sorted_actions[len(sorted_actions) - 1][1]
         selected_actions = []
 
@@ -34,7 +33,8 @@ class QAgent(Agent):
         return self._select_action_from_best(state, selected_actions)
 
     def _q_initialize(self) -> None:
-        self._q_definition = defaultdict(random)
+        import random
+        self._q_definition = defaultdict(random.random)
 
     def _q_update(self, state: State, action: Action, value: float) -> None:
         self._q_definition[(state, action)] = value

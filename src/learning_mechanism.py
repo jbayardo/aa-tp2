@@ -1,10 +1,10 @@
 from abstract.agent import Agent
-from impl.four_row_agent import EpsilonGreedyFourRowAgent
+from impl.four_row_agent import EpsilonGreedyFourRowAgent, FourRowAgent
 from impl.four_row_state import FourRowState
 
 
 class LearningMatch(object):
-    def __init__(self, teaching_agent: Agent, student_player: EpsilonGreedyFourRowAgent):
+    def __init__(self, teaching_agent: Agent, student_player: FourRowAgent):
         self.teaching_player = teaching_agent
         self.learning_player = student_player
         assert self.teaching_player.identifier != self.learning_player.identifier
@@ -28,29 +28,26 @@ class LearningMatch(object):
             turn = (turn + 1) % 2
             turns += 1
 
-        winner = -1
-        if turn == 0 and board.is_terminal:
-            winner = self.learning_player.identifier
-        elif turn == 1 and board.is_terminal:
-            winner = self.teaching_player.identifier
+        return board.winner, turns
 
-        return winner, turns
-
-    def train_many_matches(self, episodes: int, learning_rate: float, discount_factor: float) -> EpsilonGreedyFourRowAgent:
-        from collections import defaultdict
-        won_by = defaultdict(int)
+    def train_many_matches(self, episodes: int, learning_rate: float, discount_factor: float) -> FourRowAgent:
         samples = []
 
         for episode in range(1, episodes + 1):
             winner, turns = self.train_single_match(learning_rate, discount_factor)
-            won_by[winner] += 1
+
+            # Compute average value for the Q
+            avgq = 0.0
+            totq = 0.0
+            for key in self.learning_player._q_definition:
+                avgq += self.learning_player._q_definition[key]
+                totq += 1.0
+            avgq /= totq
 
             samples.append({
                 'episode_number': episode,
-                'won_by': winner,
-                'avg_by_teacher': float(won_by[2])/float(episode),
-                'avg_by_student': float(won_by[1])/float(episode),
-                'avg_ties': float(won_by[-1])/float(episode)
+                'winner': winner,
+                'avg_q': avgq
             })
 
         return self.learning_player, samples

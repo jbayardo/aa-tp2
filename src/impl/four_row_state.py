@@ -13,11 +13,16 @@ class FourRowState(State):
 
         self._actions = [FourRowAction(column) for column in range(self._columns)]
         self._filled_up_to = [0] * columns
-        self._state = collections.defaultdict(lambda: -1)
+        self._state = {}
+
+        for row in range(self._rows):
+            for column in range(self._columns):
+                self._state[(row, column)] = -1.0
 
         self._last_row_modified = 0
         self._last_column_modified = 0
         self._discs_filled = 0
+        self._winner = None
 
     @property
     def rows(self) -> int:
@@ -55,27 +60,28 @@ class FourRowState(State):
         new_state._actions = [a for a in self._actions if new_state._filled_up_to[a.column] < new_state.rows]
         new_state._state[(self._filled_up_to[action.column], action.column)] = agent.identifier
 
+        new_state._winner = None
         new_state._last_row_modified = self._filled_up_to[action.column]
         new_state._last_column_modified = action.column
         new_state._discs_filled += 1
 
+        if new_state.is_terminal:
+            new_state._actions = []
+
         return new_state
 
     @property
-    def is_terminal(self):
-        # I only have to check the row, column and diagonals of the last position modified
+    def winner(self):
+        if self._winner is not None:
+            return self._winner
 
+        # I only have to check the row, column and diagonals of the last position modified
         agent_identity = self._state[(self._last_row_modified, self._last_column_modified)]
 
-        # Check if the board is empty
+        # Check if the board is empty (this is to avoid the expensive check in naive code)
         if agent_identity == -1:
-            return False
-
-        finished = False
-
-        # Check if board is filled up
-        if self._discs_filled == self._rows * self._columns:
-            finished = True
+            self._winner = agent_identity
+            return agent_identity
 
         # Check vertical
         number_of_contiguous_discs = 0
@@ -87,9 +93,8 @@ class FourRowState(State):
                 number_of_contiguous_discs = 0
 
             if number_of_contiguous_discs >= 4:
-                finished = True
-                # print("Win vertical")
-                break
+                self._winner = agent_identity
+                return agent_identity
 
         # Check horizontal
         number_of_contiguous_discs = 0
@@ -101,9 +106,8 @@ class FourRowState(State):
                 number_of_contiguous_discs = 0
 
             if number_of_contiguous_discs >= 4:
-                finished = True
-                # print("Win horizontal")
-                break
+                self._winner = agent_identity
+                return agent_identity
 
         # Checking diagonals from left to right
         diagonal_row_position = self._last_row_modified
@@ -123,9 +127,8 @@ class FourRowState(State):
                 number_of_contiguous_discs = 0
 
             if number_of_contiguous_discs >= 4:
-                finished = True
-                # print("Win diagonal left to right")
-                break
+                self._winner = agent_identity
+                return agent_identity
 
             diagonal_row_position += 1
             diagonal_column_position += 1
@@ -148,11 +151,24 @@ class FourRowState(State):
                 number_of_contiguous_discs = 0
 
             if number_of_contiguous_discs >= 4:
-                finished = True
-                # print("Win diagonal right to left")
-                break
+                self._winner = agent_identity
+                return agent_identity
 
             diagonal_row_position += 1
             diagonal_column_position -= 1
 
-        return finished
+        self._winner = -1
+        return -1
+
+    @property
+    def is_terminal(self):
+        # Check if board is empty
+        if self._discs_filled == 0:
+            return False
+
+        # Check if board is completely full
+        if self._discs_filled == self._rows * self._columns:
+            return True
+
+        # Check if anyone won
+        return self.winner != -1
