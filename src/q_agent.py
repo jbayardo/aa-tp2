@@ -1,4 +1,3 @@
-from typing import List
 from abstract.action import Action
 from abstract.state import State
 from abstract.agent import Agent
@@ -45,7 +44,7 @@ class QAgent(Agent):
     def _reward(self, state: State, action: Action, new_state: State) -> float:
         raise NotImplementedError()
 
-    def _select_action_from_best(self, state: State, actions: List[Action]) -> Action:
+    def _select_action_from_best(self, state: State, actions: Action) -> Action:
         raise NotImplementedError()
 
     def _select_learning_action(self, state: State) -> Action:

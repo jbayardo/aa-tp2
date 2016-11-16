@@ -1,11 +1,10 @@
-from typing import Iterable
 from abstract.action import Action
 from abstract.agent import Agent
 
 
 class State(object):
     @property
-    def actions(self) -> Iterable[Action]:
+    def actions(self) -> Action:
         raise NotImplementedError()
 
     def execute(self, agent: Agent, action: Action) -> 'State':

@@ -1,6 +1,5 @@
 import copy
 import collections
-from typing import List
 from abstract.state import State
 from impl.four_row_action import FourRowAction
 
@@ -33,7 +32,7 @@ class FourRowState(State):
         return self._columns
 
     @property
-    def actions(self) -> List[FourRowAction]:
+    def actions(self) -> FourRowAction:
         return self._actions
 
     @staticmethod

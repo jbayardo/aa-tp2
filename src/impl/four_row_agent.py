@@ -1,4 +1,3 @@
-from typing import List
 import random
 from q_agent import QAgent
 from impl.four_row_action import FourRowAction
@@ -6,7 +5,7 @@ from impl.four_row_state import FourRowState
 
 
 class FourRowAgent(QAgent):
-    def _select_action_from_best(self, state: FourRowState, actions: List[FourRowAction]) -> FourRowAction:
+    def _select_action_from_best(self, state: FourRowState, actions: FourRowAction) -> FourRowAction:
         raise NotImplementedError()
 
     def _select_learning_action(self, state: FourRowState) -> FourRowAction:
@@ -27,7 +26,7 @@ class FourRowAgent(QAgent):
 
 
 class EpsilonGreedyFourRowAgent(FourRowAgent):
-    def _select_action_from_best(self, state: FourRowState, actions: List[FourRowAction]) -> FourRowAction:
+    def _select_action_from_best(self, state: FourRowState, actions: FourRowAction) -> FourRowAction:
         return random.choice(actions)
 
     def _select_learning_action(self, state: FourRowState) -> FourRowAction:
@@ -45,7 +44,7 @@ class SoftmaxFourRowAgent(FourRowAgent):
         self._iteration_counter = 0
         self._temperature = 1.0
 
-    def _select_action_from_best(self, state: FourRowState, actions: List[FourRowAction]) -> FourRowAction:
+    def _select_action_from_best(self, state: FourRowState, actions: FourRowAction) -> FourRowAction:
         return random.choice(actions)
 
     @staticmethod
