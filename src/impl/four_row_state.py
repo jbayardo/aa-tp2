@@ -1,6 +1,5 @@
 import copy
 import collections
-from typing import List
 from abstract.state import State
 from impl.four_row_action import FourRowAction
 

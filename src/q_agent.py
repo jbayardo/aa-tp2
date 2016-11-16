@@ -1,4 +1,3 @@
-from typing import List
 from abstract.action import Action
 from abstract.state import State
 from abstract.agent import Agent
