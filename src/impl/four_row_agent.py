@@ -2,6 +2,7 @@ import random
 from q_agent import QAgent
 from impl.four_row_action import FourRowAction
 from impl.four_row_state import FourRowState
+import numpy as np
 
 
 class FourRowAgent(QAgent):
@@ -15,11 +16,11 @@ class FourRowAgent(QAgent):
 
         if new_state.is_terminal:
             if new_state.winner == self.identifier:
-                return 100 * (1.0 / float(new_state._discs_filled))
+                return 100.0 * (1.0 / float(new_state._discs_filled))
             elif new_state.winner == -1:
-                return -10
+                return 0.0
             else:
-                return -100 * new_state._discs_filled
+                return -1.0 * float(new_state._discs_filled)
 
         return 0.0
         #return -10 * self._get_contiguous_enemy_entries(new_state) + 10 * self._get_contiguous_entries(new_state)
@@ -49,7 +50,6 @@ class SoftmaxFourRowAgent(FourRowAgent):
 
     @staticmethod
     def _softmax(w, t=1.0):
-        import numpy as np
         e = np.exp(np.array(w) / t)
         dist = e / np.sum(e)
         return dist

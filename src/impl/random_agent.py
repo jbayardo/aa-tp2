@@ -1,4 +1,5 @@
 from abstract.agent import Agent
+import random
 
 
 class RandomAgent(Agent):
@@ -6,5 +7,4 @@ class RandomAgent(Agent):
         return 'Random Agent'
 
     def policy(self, state):
-        import random
         return random.choice(state.actions)
