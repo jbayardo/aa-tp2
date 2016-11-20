@@ -6,17 +6,16 @@ import hashlib
 
 class FourRowState(State):
     # TODO: optimize.
-    def __init__(self, rows: int = 4, columns: int = 4):
-        self._contiguous_discs = 3
+    def __init__(self, rows: int = 6, columns: int = 7):
+        self._contiguous_discs = 4
         self._rows = rows
         self._columns = columns
+        self._size = rows * columns
 
         self._actions = np.array([FourRowAction(column) for column in range(self._columns)])
-        self._filled_up_to = np.zeros(columns)
-        self._state = (-1) * np.ones((rows, columns))
+        self._filled_up_to = [7 * i for i in range(6)]
+        self._bitboards = [int(self._size * '0', 2) for i in range(2)] # Bitboard for each player
 
-        self._last_row_modified = 0
-        self._last_column_modified = 0
         self._discs_filled = 0
         self._winner = None
 
@@ -37,12 +36,18 @@ class FourRowState(State):
         return FourRowState()
 
     def print_board(self) -> None:
-        for row in reversed(range(self._rows)):
+        learning_player = bin(self._bitboards[0])[::-1][:-2]
+        teaching_player = bin(self._bitboards[1])[::-1][:-2]
+        learning_player += '0' * (self._size - len(learning_player))
+        teaching_player += '0' * (self._size - len(teaching_player))
+        for row in range(self._rows):
             for column in range(self._columns):
-                if self._state[row][column] == -1:
+                if learning_player[7 * row + column] == '1':
                     print("0", end=" ")
+                elif teaching_player[7 * row + column] == '1':
+                    print("1", end=" ")
                 else:
-                    print(self._state[row][column], end=" ")
+                    print("2", end=" ")
 
             print("")
 
@@ -57,13 +62,12 @@ class FourRowState(State):
 
         new_state = copy.deepcopy(self)
 
+        move = 1 << new_state._filled_up_to[action.column]
         new_state._filled_up_to[action.column] += 1
-        new_state._actions = [a for a in self._actions if new_state._filled_up_to[a.column] < new_state.rows]
-        new_state._state[self._filled_up_to[action.column]][action.column] = agent.identifier
+
+        bitboard[agent.identifier] ^= move
 
         new_state._winner = None
-        new_state._last_row_modified = self._filled_up_to[action.column]
-        new_state._last_column_modified = action.column
         new_state._discs_filled += 1
 
         if new_state.is_terminal:
@@ -71,98 +75,19 @@ class FourRowState(State):
 
         return new_state
 
-    @property
-    def winner(self):
-        if self._winner is not None:
-            return self._winner
+    def is_win(self, agent=0):
+        board = self._bitboards[agent] # Need to receive player
 
-        # I only have to check the row, column and diagonals of the last position modified
-        agent_identity = self._state[self._last_row_modified][self._last_column_modified]
+        directions = [1, 6, 7, 8]
 
-        # Check if the board is empty (this is to avoid the expensive check in naive code)
-        if agent_identity == -1:
-            self._winner = agent_identity
-            return agent_identity
+        for direction in directions:
+            if (board & (board >> direction) & (board >> (2 * direction)) & (board >> (3 * direction))) != 0:
+                self._winner = agent
+                return True
 
-        # Check vertical
-        number_of_contiguous_discs = 0
-        for row in range(self._rows):
+        return False
 
-            if self._state[row][self._last_column_modified] == agent_identity:
-                number_of_contiguous_discs += 1
-            else:
-                number_of_contiguous_discs = 0
-
-            if number_of_contiguous_discs >= self._contiguous_discs:
-                self._winner = agent_identity
-                return agent_identity
-
-        # Check horizontal
-        number_of_contiguous_discs = 0
-        for column in range(self._columns):
-
-            if self._state[self._last_row_modified][column] == agent_identity:
-                number_of_contiguous_discs += 1
-            else:
-                number_of_contiguous_discs = 0
-
-            if number_of_contiguous_discs >= self._contiguous_discs:
-                self._winner = agent_identity
-                return agent_identity
-
-        # Checking diagonals from left to right
-        diagonal_row_position = self._last_row_modified
-        diagonal_column_position = self._last_column_modified
-
-        # Going to the first position of the diagonal
-        while diagonal_row_position > 0 and diagonal_column_position > 0:
-            diagonal_row_position -= 1
-            diagonal_column_position -= 1
-
-        number_of_contiguous_discs = 0
-        while diagonal_row_position < self._rows and diagonal_column_position < self._columns:
-
-            if self._state[diagonal_row_position][diagonal_column_position] == agent_identity:
-                number_of_contiguous_discs += 1
-            else:
-                number_of_contiguous_discs = 0
-
-            if number_of_contiguous_discs >= self._contiguous_discs:
-                self._winner = agent_identity
-                return agent_identity
-
-            diagonal_row_position += 1
-            diagonal_column_position += 1
-
-        # Checking diagonals from right to left
-        diagonal_row_position = self._last_row_modified
-        diagonal_column_position = self._last_column_modified
-
-        # Going to the first position of the diagonal
-        while diagonal_row_position > 0 and diagonal_column_position < self._columns - 1:
-            diagonal_row_position -= 1
-            diagonal_column_position += 1
-
-        number_of_contiguous_discs = 0
-        while diagonal_row_position < self._rows and diagonal_column_position > 0:
-
-            if self._state[diagonal_row_position][diagonal_column_position] == agent_identity:
-                number_of_contiguous_discs += 1
-            else:
-                number_of_contiguous_discs = 0
-
-            if number_of_contiguous_discs >= self._contiguous_discs:
-                self._winner = agent_identity
-                return agent_identity
-
-            diagonal_row_position += 1
-            diagonal_column_position -= 1
-
-        self._winner = -1
-        return -1
-
-    @property
-    def is_terminal(self) -> bool:
+    def is_terminal(self, agent=0) -> bool:
         # Check if board is empty
         if self._discs_filled == 0:
             return False
@@ -172,7 +97,7 @@ class FourRowState(State):
             return True
 
         # Check if anyone won
-        return self.winner != -1
+        return self.is_win(agent)
 
     # The following are required for dictionary usage
     def __hash__(self):

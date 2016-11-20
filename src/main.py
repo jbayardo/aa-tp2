@@ -8,8 +8,8 @@ if __name__ == '__main__':
     import pandas as pd
     matplotlib.style.use('ggplot')
 
-    learning_player = SoftmaxFourRowAgent(1)
-    teaching_player = RandomAgent(2)
+    learning_player = SoftmaxFourRowAgent(0)
+    teaching_player = RandomAgent(1)
     trainer = LearningMatch(teaching_player, learning_player)
     learned_player, statistics = trainer.train_many_matches(10000, 0.9, 0.3)
 

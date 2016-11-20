@@ -28,9 +28,9 @@ class LearningMatch(object):
         # Keep track of numbers
         turn = 0
         turns = 0
+        agent = players[turn]
 
-        while not state.is_terminal:
-            agent = players[turn]
+        while not state.is_terminal(agent):
             action = agent.policy(state)
             new_state = state.execute(agent, action)
 
@@ -45,6 +45,7 @@ class LearningMatch(object):
 
             turn = (turn + 1) % 2
             turns += 1
+            agent = players[turn]
 
         return state.winner, turns
 
