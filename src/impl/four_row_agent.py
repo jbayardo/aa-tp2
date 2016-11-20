@@ -1,18 +1,17 @@
 import random
 from q_agent import QAgent
-from impl.four_row_action import FourRowAction
 from impl.four_row_state import FourRowState
 import numpy as np
 
 
 class FourRowAgent(QAgent):
-    def _select_action_from_best(self, state: FourRowState, actions: FourRowAction) -> FourRowAction:
+    def _select_action_from_best(self, state: FourRowState, actions):
         raise NotImplementedError()
 
-    def _select_learning_action(self, state: FourRowState) -> FourRowAction:
+    def _select_learning_action(self, state: FourRowState):
         raise NotImplementedError()
 
-    def _reward(self, state: FourRowState, action: FourRowAction, new_state: FourRowState) -> float:
+    def _reward(self, state: FourRowState, action, new_state: FourRowState) -> float:
 
         if new_state.is_terminal:
             if new_state.winner == self.identifier:
@@ -27,10 +26,10 @@ class FourRowAgent(QAgent):
 
 
 class EpsilonGreedyFourRowAgent(FourRowAgent):
-    def _select_action_from_best(self, state: FourRowState, actions: FourRowAction) -> FourRowAction:
+    def _select_action_from_best(self, state: FourRowState, actions):
         return random.choice(actions)
 
-    def _select_learning_action(self, state: FourRowState) -> FourRowAction:
+    def _select_learning_action(self, state: FourRowState):
         epsilon = 0.3
 
         if random.random() < epsilon:
@@ -45,7 +44,7 @@ class SoftmaxFourRowAgent(FourRowAgent):
         self._iteration_counter = 0
         self._temperature = 1.0
 
-    def _select_action_from_best(self, state: FourRowState, actions: FourRowAction) -> FourRowAction:
+    def _select_action_from_best(self, state: FourRowState, actions):
         return random.choice(actions)
 
     @staticmethod
@@ -54,7 +53,7 @@ class SoftmaxFourRowAgent(FourRowAgent):
         dist = e / np.sum(e)
         return dist
 
-    def _select_learning_action(self, state: FourRowState) -> FourRowAction:
+    def _select_learning_action(self, state):
         self._iteration_counter += 1
         actions = [self._q(state, action) for action in state.actions]
         pairs = zip(state.actions, self._softmax(actions, self._temperature))

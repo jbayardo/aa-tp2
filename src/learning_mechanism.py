@@ -30,12 +30,16 @@ class LearningMatch(object):
         turns = 0
         agent = players[turn]
 
-        while not state.is_terminal(agent):
+        while not state.is_terminal:
             action = agent.policy(state)
             new_state = state.execute(agent, action)
 
+            #print("TURN", turns,"BY PLAYER", agent.identifier, "PLAYING ACTION", action)
+            #new_state.print_board()
+
             # Give the previous agent feedback on its actions
-            if previous_agent is not None and previous_state is not None and previous_action is not None and hasattr(previous_agent, 'feedback'):
+            if previous_agent is not None and previous_state is not None and previous_action is not None and hasattr(
+                    previous_agent, 'feedback'):
                 previous_agent.feedback(previous_state, previous_action, new_state, learning_rate, discount_factor)
 
             previous_action = action
@@ -63,7 +67,6 @@ class LearningMatch(object):
             for key in self.learning_player._q_definition:
                 avgq += self.learning_player._q_definition[key]
                 totq += 1.0
-            avgq /= totq
 
             samples.append({
                 'episode_number': episode,

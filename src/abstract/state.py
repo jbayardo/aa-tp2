@@ -1,13 +1,12 @@
-from abstract.action import Action
 from abstract.agent import Agent
 
 
 class State(object):
     @property
-    def actions(self) -> Action:
+    def actions(self):
         raise NotImplementedError()
 
-    def execute(self, agent: Agent, action: Action) -> 'State':
+    def execute(self, agent: Agent, action) -> 'State':
         raise NotImplementedError()
 
     @property

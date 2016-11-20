@@ -1,4 +1,3 @@
-from abstract.action import Action
 from abstract.agent import Agent
 from abstract.state import State
 import collections
@@ -22,7 +21,7 @@ class QAgent(Agent):
     def toggle_learning(self):
         self._learning = not self._learning
 
-    def policy(self, state: State) -> Action:
+    def policy(self, state: State):
         assert not state.is_terminal
 
         if self._learning:
@@ -45,7 +44,7 @@ class QAgent(Agent):
 
             return self._select_action_from_best(state, selected_actions)
 
-    def feedback(self, previous_state: State, executed_action: Action, new_state: State, learning_rate: float = 0.9,
+    def feedback(self, previous_state: State, executed_action, new_state: State, learning_rate: float = 0.9,
                  discount_factor: float = 0.1):
         assert self._learning
         reward = self._reward(previous_state, executed_action, new_state)
@@ -62,10 +61,10 @@ class QAgent(Agent):
     def _q_initialize(self):
         self._q_definition = collections.defaultdict(random.random)
 
-    def _q_update(self, state: State, action: Action, value: float):
+    def _q_update(self, state: State, action, value: float):
         self._q_definition[(state, action)] = value
 
-    def _q(self, state: State, action: Action) -> float:
+    def _q(self, state: State, action) -> float:
         return self._q_definition[(state, action)]
 
     def _reward(self, state, action, new_state):

@@ -11,7 +11,7 @@ if __name__ == '__main__':
     learning_player = SoftmaxFourRowAgent(0)
     teaching_player = RandomAgent(1)
     trainer = LearningMatch(teaching_player, learning_player)
-    learned_player, statistics = trainer.train_many_matches(10000, 0.9, 0.3)
+    learned_player, statistics = trainer.train_many_matches(1000, 0.9, 0.3)
 
     data = pd.DataFrame.from_records(statistics, index='episode_number')
     data.to_csv('output.csv')
