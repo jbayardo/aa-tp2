@@ -1,7 +1,7 @@
 from abstract.agent import Agent
 from abstract.state import State
 import collections
-import random
+import numpy as np
 
 
 class QAgent(Agent):
@@ -59,7 +59,7 @@ class QAgent(Agent):
                        current_q + learning_rate * (reward + discount_factor * maximum_factor - current_q))
 
     def _q_initialize(self):
-        self._q_definition = collections.defaultdict(random.random)
+        self._q_definition = collections.defaultdict(lambda: np.random.uniform(0.5, 1.0))
 
     def _q_update(self, state: State, action, value: float):
         self._q_definition[(state, action)] = value

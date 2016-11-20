@@ -2,6 +2,7 @@ from abstract.agent import Agent
 from impl.four_row_agent import FourRowAgent
 from impl.four_row_state import FourRowState
 import random
+import numpy as np
 
 
 class LearningMatch(object):
@@ -62,16 +63,15 @@ class LearningMatch(object):
             winner, turns = self.train_single_match(learning_rate, discount_factor)
 
             # Compute average value for the Q
-            avgq = 0.0
-            totq = 0.0
-            for key in self.learning_player._q_definition:
-                avgq += self.learning_player._q_definition[key]
-                totq += 1.0
+            vals = np.array(list(self.learning_player._q_definition.values()), dtype=np.float64)
+            avgq = np.mean(vals)
+            devq = np.std(vals)
 
             samples.append({
                 'episode_number': episode,
                 'winner': winner,
-                'avg_q': avgq
+                'avg_q': avgq,
+                'std_q': devq
             })
 
         return self.learning_player, samples

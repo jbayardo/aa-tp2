@@ -1,7 +1,6 @@
 import copy
 from abstract.state import State
 import numpy as np
-import hashlib
 
 _rows = 6
 _columns = 7
@@ -14,7 +13,8 @@ _size = _rows * _columns
 # Ensure the actual board size is lower than the maximum than can be held by an uint64
 assert (_rows1 * _columns) < 64
 
-# Generate the bitmask for checking if a row has been filled
+# Generate the bitmask for checking if the entire board has been filled
+# taken from https://github.com/nwestbury/pyConnect4/blob/master/board.py
 _full_board = np.uint64(0)
 for column in range(_columns):
     for row in range(_rows):
@@ -101,17 +101,15 @@ class FourRowState(State):
 
     @property
     def is_draw(self):
-        # taken from https://github.com/nwestbury/pyConnect4/blob/master/board.py
         return self.board == _full_board
 
     @property
     def is_terminal(self) -> bool:
         return self.is_draw or _is_winning_board(self._boards[0]) or _is_winning_board(self._boards[1])
 
-    # TODO: revisit
     # The following are required for dictionary usage
     def __hash__(self):
-        return hash(self.board)
+        return int(self.board)
 
     def __eq__(self, other: 'FourRowState') -> bool:
         return self.board == other.board
