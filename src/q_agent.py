@@ -49,11 +49,11 @@ class QAgent(Agent):
                  discount_factor: float = 0.1):
         assert self._learning
         reward = self._reward(previous_state, executed_action, new_state)
+        scores = [self._q(new_state, action) for action in new_state.actions]
 
-        try:
-            maximum_factor = max([self._q(new_state, action) for action in new_state.actions])
-        except ValueError:
-            maximum_factor = 0.0
+        maximum_factor = 0.0
+        if len(scores) > 0:
+            maximum_factor = max(scores)
 
         current_q = self._q(previous_state, executed_action)
         self._q_update(previous_state, executed_action,
