@@ -56,12 +56,12 @@ class FourRowState(State):
     def print_board(self):
         print(self._boards)
 
-        for row in reversed(range(_rows)):
-            for column in range(_columns):
+        for r in reversed(range(_rows)):
+            for c in range(_columns):
                 p = False
 
                 for player, board in enumerate(self._boards):
-                    move = np.uint64(1 << (row + (column * _rows1)))
+                    move = np.uint64(1 << (r + (c * _rows1)))
                     if board & move:
                         p = True
                         print(player + 1, end=" ")
@@ -77,6 +77,7 @@ class FourRowState(State):
     def execute(self, agent: 'FourRowAgent', action) -> 'FourRowState':
         assert action < _columns
         assert self._heights[action] < _rows
+        assert not self.is_terminal
 
         move = np.uint64(1 << (self._heights[action] + (action * _rows1)))
         new_state = copy.deepcopy(self)

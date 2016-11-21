@@ -12,16 +12,18 @@ class FourRowAgent(QAgent):
         raise NotImplementedError()
 
     def _reward(self, state: FourRowState, action, new_state: FourRowState) -> float:
+        d = float(new_state._discs_filled)
+        reward = -d
 
         if new_state.is_terminal:
             if new_state.winner == self.identifier:
-                return 100.0 * (1.0 / float(new_state._discs_filled))
+                reward = 100.0 * (1.0 / d)
             elif new_state.winner == -1:
-                return 0.0
+                reward = -d
             else:
-                return -1.0 * float(new_state._discs_filled)
+                reward = -100.0 * d
 
-        return 0.0
+        return reward
         #return -10 * self._get_contiguous_enemy_entries(new_state) + 10 * self._get_contiguous_entries(new_state)
 
 

@@ -58,7 +58,7 @@ class LearningMatch(object):
         samples = []
 
         for episode in range(1, episodes + 1):
-            if episode % 10 == 0:
+            if episode % 100 == 0:
                 print('Playing episode', episode)
             winner, turns = self.train_single_match(learning_rate, discount_factor)
 
@@ -70,6 +70,7 @@ class LearningMatch(object):
             samples.append({
                 'episode_number': episode,
                 'winner': winner,
+                'turns': turns,
                 'avg_q': avgq,
                 'std_q': devq
             })

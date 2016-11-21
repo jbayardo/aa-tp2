@@ -46,25 +46,30 @@ class QAgent(Agent):
 
     def feedback(self, previous_state: State, executed_action, new_state: State, learning_rate: float = 0.9,
                  discount_factor: float = 0.1):
+        assert 0.0 <= learning_rate
+        assert learning_rate <= 1.0
+        assert 0.0 <= discount_factor
+        assert discount_factor <= 1.0
         assert self._learning
+
         reward = self._reward(previous_state, executed_action, new_state)
-        scores = [self._q(new_state, action) for action in new_state.actions]
+        scores = np.array([self._q(new_state, action) for action in new_state.actions])
 
         maximum_factor = 0.0
         if len(scores) > 0:
-            maximum_factor = max(scores)
+            maximum_factor = np.amax(scores)
 
         current_q = self._q(previous_state, executed_action)
         self._q_update(previous_state, executed_action,
                        current_q + learning_rate * (reward + discount_factor * maximum_factor - current_q))
 
     def _q_initialize(self):
-        self._q_definition = collections.defaultdict(lambda: np.random.uniform(0.5, 1.0))
+        self._q_definition = collections.defaultdict(lambda: 1.0)
 
-    def _q_update(self, state: State, action, value: float):
+    def _q_update(self, state: State, action, value):
         self._q_definition[(state, action)] = value
 
-    def _q(self, state: State, action) -> float:
+    def _q(self, state: State, action) -> np.float64:
         return self._q_definition[(state, action)]
 
     def _reward(self, state, action, new_state):
