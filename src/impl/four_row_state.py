@@ -110,7 +110,7 @@ class FourRowState(State):
 
     # The following are required for dictionary usage
     def __hash__(self):
-        return int(self.board)
+        return hash((self._boards[0], self._boards[1]))
 
     def __eq__(self, other: 'FourRowState') -> bool:
         return self.board == other.board

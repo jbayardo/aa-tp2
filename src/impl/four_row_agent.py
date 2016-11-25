@@ -41,10 +41,10 @@ class EpsilonGreedyFourRowAgent(FourRowAgent):
 
 
 class SoftmaxFourRowAgent(FourRowAgent):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, temperature, *args, **kwargs):
         super(FourRowAgent, self).__init__(*args, **kwargs)
         self._iteration_counter = 0
-        self._temperature = 1.0
+        self._temperature = temperature
 
     def _select_action_from_best(self, state: FourRowState, actions):
         return random.choice(actions)
@@ -55,8 +55,8 @@ class SoftmaxFourRowAgent(FourRowAgent):
         dist = e / np.sum(e)
         return dist
 
-    def _select_learning_action(self, state):
+    def _select_learning_action(self, state: FourRowState):
         self._iteration_counter += 1
         actions = [self._q(state, action) for action in state.actions]
-        pairs = zip(state.actions, self._softmax(actions, self._temperature))
+        pairs = zip(state.actions, self._softmax(actions, self._temperature(self, self._iteration_counter)))
         return max(pairs, key=lambda x: x[1])[0]

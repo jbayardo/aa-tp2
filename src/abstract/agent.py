@@ -1,13 +1,19 @@
-class Agent(object):
-    def __init__(self, identifier):
-        self._identifier = identifier
+from abstract.state import State
+import uuid
 
-    def name(self) -> str:
-        raise NotImplementedError()
+
+class Agent(object):
+    def __init__(self, identifier: int):
+        self._identifier = identifier
+        self._name = str(uuid.uuid4())
 
     @property
-    def identifier(self):
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def identifier(self) -> int:
         return self._identifier
 
-    def policy(self, state):
+    def policy(self, state: State):
         raise NotImplementedError()

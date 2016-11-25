@@ -1,30 +1,30 @@
 from abstract.agent import Agent
 from abstract.state import State
-import collections
 import numpy as np
 
 
 class QAgent(Agent):
-    def __init__(self, identifier: int):
+    def __init__(self, identifier: int, learning_rate, discount_factor):
         super(QAgent, self).__init__(identifier)
         self._q_definition = None
         self._q_initialize()
+
         self._learning = True
 
-    def name(self):
-        return 'Q Learning Agent'
+        self._learning_rate = learning_rate
+        self._discount_factor = discount_factor
 
     @property
-    def learning(self):
+    def learning(self) -> bool:
         return self._learning
 
-    def toggle_learning(self):
+    def toggle_learning(self) -> None:
         self._learning = not self._learning
 
     def policy(self, state: State):
         assert not state.is_terminal
 
-        if self._learning:
+        if self.learning:
             return self._select_learning_action(state)
         else:
             available_actions = state.actions
@@ -44,13 +44,8 @@ class QAgent(Agent):
 
             return self._select_action_from_best(state, selected_actions)
 
-    def feedback(self, previous_state: State, executed_action, new_state: State, learning_rate: float = 0.9,
-                 discount_factor: float = 0.1):
-        assert 0.0 <= learning_rate
-        assert learning_rate <= 1.0
-        assert 0.0 <= discount_factor
-        assert discount_factor <= 1.0
-        assert self._learning
+    def feedback(self, previous_state: State, executed_action, new_state: State, episode: int, turn: int) -> None:
+        assert self.learning
 
         reward = self._reward(previous_state, executed_action, new_state)
         scores = np.array([self._q(new_state, action) for action in new_state.actions])
@@ -60,23 +55,32 @@ class QAgent(Agent):
             maximum_factor = np.amax(scores)
 
         current_q = self._q(previous_state, executed_action)
+
+        learning_rate = self._learning_rate(self, episode, turn)
+        discount_factor = self._discount_factor(self, episode, turn)
+
+        # noinspection PyTypeChecker
         self._q_update(previous_state, executed_action,
                        current_q + learning_rate * (reward + discount_factor * maximum_factor - current_q))
 
-    def _q_initialize(self):
-        self._q_definition = collections.defaultdict(lambda: 1.0)
+    def _q_initialize(self) -> None:
+        self._q_definition = {}
 
-    def _q_update(self, state: State, action, value):
+    def _q_update(self, state: State, action, value: np.float64) -> None:
         self._q_definition[(state, action)] = value
 
     def _q(self, state: State, action) -> np.float64:
-        return self._q_definition[(state, action)]
+        return self._q_definition.get((state, action), 1.0)
 
-    def _reward(self, state, action, new_state):
+    def _reward(self, state: State, action, new_state: State) -> np.float64:
         raise NotImplementedError()
 
-    def _select_action_from_best(self, state, actions):
+    def _select_action_from_best(self, state: State, actions):
         raise NotImplementedError()
 
-    def _select_learning_action(self, state):
+    def _select_learning_action(self, state: State):
         raise NotImplementedError()
+
+    def perturb(self):
+        for (state, action) in self._q_definition:
+            self._q_definition[(state, action)] += np.random.uniform()

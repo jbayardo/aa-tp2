@@ -1,6 +1,21 @@
 from impl.four_row_agent import SoftmaxFourRowAgent, EpsilonGreedyFourRowAgent
 from impl.random_agent import RandomAgent
 from learning_mechanism import LearningMatch
+import numpy as np
+import uuid
+
+
+def decaying_learning_rate(agent, episode, turn):
+    return np.float64(turn)/np.float64(50.0)
+
+
+def decaying_discount_factor(agent, episode, turn):
+    return 0.8
+
+
+def temperature(agent, call):
+    return 1.0/float(call)
+
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
@@ -8,20 +23,19 @@ if __name__ == '__main__':
     import pandas as pd
     matplotlib.style.use('ggplot')
 
-    learning_player = EpsilonGreedyFourRowAgent(0)
+    run_id = uuid.uuid4()
+
+    learning_player = SoftmaxFourRowAgent(
+        identifier=0,
+        learning_rate=decaying_learning_rate,
+        discount_factor=decaying_discount_factor,
+        temperature=temperature)
     teaching_player = RandomAgent(1)
     trainer = LearningMatch(teaching_player, learning_player)
-    learned_player, statistics = trainer.train_many_matches(100000, 0.001, 0.5)
+    learned_player, statistics = trainer.train_many_matches(30000)
 
     data = pd.DataFrame.from_records(statistics, index='episode_number')
-    data.to_csv('output.csv')
-
-    data[['avg_q', 'std_q']].plot().get_figure().savefig('q_values.png')
-    plt.clf()
-    plt.cla()
-    plt.close()
-
-    data['turns'].plot().get_figure().savefig('turns_taken.png')
+    data.to_csv('{0}.csv'.format(run_id))
 
     data = []
     for entry in statistics:
@@ -42,4 +56,4 @@ if __name__ == '__main__':
         })
 
     data = pd.DataFrame.from_records(data, index='episode_number')
-    data[['won', 'tied']].rolling(window=500).mean().plot().get_figure().savefig('avgs.png')
+    data[['won', 'tied']].rolling(window=250).mean().plot(yticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]).get_figure().savefig('{0}.svg'.format(run_id))
