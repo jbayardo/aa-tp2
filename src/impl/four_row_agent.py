@@ -26,15 +26,25 @@ class FourRowAgent(QAgent):
         return reward
         #return -10 * self._get_contiguous_enemy_entries(new_state) + 10 * self._get_contiguous_entries(new_state)
 
+    def _get_contiguous_entries(self, state: FourRowState, enemy: bool = False):
+        state.get(i, j)
+
+        pass
+
 
 class EpsilonGreedyFourRowAgent(FourRowAgent):
+    def __init__(self, epsilon, *args, **kwargs):
+        super(FourRowAgent, self).__init__(*args, **kwargs)
+        self._epsilon = epsilon
+
+        assert self._epsilon >= 0.0
+        assert self._epsilon <= 1.0
+
     def _select_action_from_best(self, state: FourRowState, actions):
         return random.choice(actions)
 
     def _select_learning_action(self, state: FourRowState):
-        epsilon = 0.3
-
-        if random.random() < epsilon:
+        if random.random() < self._epsilon:
             return random.choice(state.actions)
 
         return max(state.actions, key=lambda action: self._q(state, action))
