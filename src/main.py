@@ -10,7 +10,7 @@ from impl.four_row_agent import *
 from utils import *
 
 
-def dump_statistics(file_identifier: str, file_type: str, statistics, identifier: int):
+def dump_statistics(file_identifier: str, file_type: str, statistics, identifier: int, params):
     data = pandas.DataFrame.from_records(statistics, index='episode_number')
     data.to_csv('{0}_{1}.csv'.format(file_identifier, file_type))
 
@@ -33,7 +33,11 @@ def dump_statistics(file_identifier: str, file_type: str, statistics, identifier
         })
 
     data = pandas.DataFrame.from_records(data, index='episode_number')
-    data[['left_won', 'tied']].rolling(window=1000).mean().plot(yticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]).get_figure().savefig('{0}_{1}.svg'.format(file_identifier, file_type))
+    data = data[['left_won', 'tied']].rolling(window=500).mean()
+    axes = data.plot(yticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    axes.text(2, 6, 'Parameters A')
+    axes.text(4, 6, 'Parameters B')
+    axes.get_figure().savefig('{0}_{1}.svg'.format(file_identifier, file_type))
 
 
 def emulate_match(params):
@@ -58,8 +62,8 @@ def emulate_match(params):
 
     trainer = LearningMatch(left_agent, right_agent)
     training_statistics, playing_statistics = trainer.train_many_matches(run_id, NUMBER_OF_MATCHES)
-    dump_statistics(run_id, 'training', training_statistics, 0)
-    dump_statistics(run_id, 'playing', playing_statistics, 0)
+    dump_statistics(run_id, 'training', training_statistics, 0, left_parameters)
+    dump_statistics(run_id, 'playing', playing_statistics, 0, right_parameters)
 
 if __name__ == '__main__':
     matplotlib.pyplot.style.use('ggplot')
@@ -69,7 +73,7 @@ if __name__ == '__main__':
     agents.append((RandomAgent, {}))
 
     agents.append((EpsilonGreedyFourRowAgent, {
-        'epsilon': [0.3],
+        'epsilon': np.arange(0.1, 1.0, 0.1),
         'learning_rate': [decaying_learning_rate],
         'discount_factor': [decaying_discount_factor]
     }))
@@ -92,9 +96,9 @@ if __name__ == '__main__':
             preinstantiated_agents.append((agent, combination))
 
     # Actually run the matches
-    NUMBER_OF_MATCHES = 3000
+    NUMBER_OF_MATCHES = 20000
     print('Emulating {} matches per run'.format(NUMBER_OF_MATCHES))
 
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+    executor = concurrent.futures.ProcessPoolExecutor(max_workers=3)
     for data in itertools.combinations(preinstantiated_agents, 2):
         executor.submit(emulate_match, data)
