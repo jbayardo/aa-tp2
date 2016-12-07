@@ -82,13 +82,14 @@ class LearningMatch(object):
 
         return state, turns
 
-    def train_many_matches(self, episodes: int):
+    def train_many_matches(self, run_id: str, episodes: int):
         training_samples = []
         running_samples = []
 
-        for episode in range(1, episodes + 1):
+        episodes += 1
+        for episode in range(1, episodes):
             if episode % 1000 == 0:
-                print('Playing episode', episode)
+                print('{} Playing episode {} out of {}'.format(run_id, episode, episodes - 1))
 
             start_state = FourRowState.generate()
 

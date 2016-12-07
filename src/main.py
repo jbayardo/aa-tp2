@@ -2,6 +2,7 @@ import uuid
 import matplotlib.pyplot
 import pandas
 import itertools
+import concurrent.futures
 
 from learning_mechanism import LearningMatch
 from abstract.random_agent import *
@@ -35,6 +36,31 @@ def dump_statistics(file_identifier: str, file_type: str, statistics, identifier
     data[['left_won', 'tied']].rolling(window=1000).mean().plot(yticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]).get_figure().savefig('{0}_{1}.svg'.format(file_identifier, file_type))
 
 
+def emulate_match(params):
+    (left_data, right_data) = params
+    (left_class, left_parameters) = left_data
+    (right_class, right_parameters) = right_data
+
+    run_id = str(uuid.uuid4())[:8]
+    print('{} Running match between instance of {} and {}'.format(run_id, left_class.__name__, right_class.__name__))
+    print('{} Parameters for left agent:'.format(run_id), left_parameters)
+    print('{} Parameters for right agent:'.format(run_id), right_parameters)
+
+    left_parameters.update({
+        'identifier': 0
+    })
+    left_agent = left_class(**left_parameters)
+
+    right_parameters.update({
+        'identifier': 1
+    })
+    right_agent = right_class(**right_parameters)
+
+    trainer = LearningMatch(left_agent, right_agent)
+    training_statistics, playing_statistics = trainer.train_many_matches(run_id, NUMBER_OF_MATCHES)
+    dump_statistics(run_id, 'training', training_statistics, 0)
+    dump_statistics(run_id, 'playing', playing_statistics, 0)
+
 if __name__ == '__main__':
     matplotlib.pyplot.style.use('ggplot')
 
@@ -66,29 +92,9 @@ if __name__ == '__main__':
             preinstantiated_agents.append((agent, combination))
 
     # Actually run the matches
-    NUMBER_OF_MATCHES = 10000
+    NUMBER_OF_MATCHES = 3000
     print('Emulating {} matches per run'.format(NUMBER_OF_MATCHES))
 
-    for (left, right) in itertools.combinations(preinstantiated_agents, 2         ):
-        (left_class, left_parameters) = left
-        (right_class, right_parameters) = right
-
-        run_id = str(uuid.uuid4())
-        print('Running match ID {} between instance of {} and {}'.format(run_id, left_class.__name__, right_class.__name__))
-        print('Parameters for left agent:', left_parameters)
-        print('Parameters for right agent:', right_parameters)
-
-        left_parameters.update({
-            'identifier': 0
-        })
-        left_agent = left_class(**left_parameters)
-
-        right_parameters.update({
-            'identifier': 1
-        })
-        right_agent = right_class(**right_parameters)
-
-        trainer = LearningMatch(left_agent, right_agent)
-        training_statistics, playing_statistics = trainer.train_many_matches(NUMBER_OF_MATCHES)
-        dump_statistics(run_id, 'training', training_statistics, 0)
-        dump_statistics(run_id, 'playing', playing_statistics, 0)
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+    for data in itertools.combinations(preinstantiated_agents, 2):
+        executor.submit(emulate_match, data)
