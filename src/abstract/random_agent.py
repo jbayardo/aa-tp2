@@ -4,5 +4,5 @@ import random
 
 
 class RandomAgent(Agent):
-    def policy(self, state: State):
+    def policy(self, state: State, **kwargs):
         return random.choice(state.actions)

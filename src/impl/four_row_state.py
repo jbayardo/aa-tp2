@@ -4,8 +4,8 @@ import numpy as np
 
 _rows = 6
 _columns = 7
-_contiguous_discs = 4
 
+# Only works for 4 contiguous discs
 _rows1 = _rows + 1
 _rows2 = _rows + 2
 
@@ -13,7 +13,7 @@ _size = _rows * _columns
 # Ensure the actual board size is lower than the maximum than can be held by an uint64
 assert (_rows1 * _columns) < 64
 
-# Generate the bitmask for checking if the entire board has been filled
+# Generate the bitmask for checking if the entire board has been filled idea
 # taken from https://github.com/nwestbury/pyConnect4/blob/master/board.py
 _full_board = np.uint64(0)
 for i in range(_columns):
@@ -53,10 +53,6 @@ class FourRowState(State):
     def rows():
         return _rows
 
-    @staticmethod
-    def maximum_contiguous_discs():
-        return _contiguous_discs
-
     @property
     def actions(self):
         return [i for i in range(_columns) if self._heights[i] < _rows]
@@ -90,6 +86,7 @@ class FourRowState(State):
         assert action < _columns
         assert self._heights[action] < _rows
         assert not self.is_terminal
+        assert agent.identifier == 0 or agent.identifier == 1
 
         move = np.uint64(1 << (self._heights[action] + (action * _rows1)))
         new_state = copy.deepcopy(self)
@@ -102,9 +99,11 @@ class FourRowState(State):
     @property
     def winner(self):
         if self.is_terminal:
-            for player, board in enumerate(self._boards):
-                if _is_winning_board(board):
-                    return player
+            if _is_winning_board(self._boards[0]):
+                return 0
+
+            if _is_winning_board(self._boards[1]):
+                return 1
 
         return -1
 

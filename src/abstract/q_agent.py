@@ -1,31 +1,23 @@
 from abstract.agent import Agent
 from abstract.state import State
 import numpy as np
+import pickle
 
 
 class QAgent(Agent):
-    def __init__(self, identifier: int, learning_rate, discount_factor):
-        super(QAgent, self).__init__(identifier)
+    def __init__(self, *args, **kwargs):
+        super(QAgent, self).__init__(*args, **kwargs)
         self._q_definition = None
         self._q_initialize()
 
-        self._learning = True
+        self._learning_rate = kwargs['learning_rate']
+        self._discount_factor = kwargs['discount_factor']
 
-        self._learning_rate = learning_rate
-        self._discount_factor = discount_factor
-
-    @property
-    def learning(self) -> bool:
-        return self._learning
-
-    def toggle_learning(self) -> None:
-        self._learning = not self._learning
-
-    def policy(self, state: State):
+    def policy(self, state: State, **kwargs):
         assert not state.is_terminal
 
         if self.learning:
-            return self._select_learning_action(state)
+            return self._select_learning_action(state, **kwargs)
         else:
             available_actions = state.actions
             scores = [self._q(state, action) for action in available_actions]
@@ -78,9 +70,11 @@ class QAgent(Agent):
     def _select_action_from_best(self, state: State, actions):
         raise NotImplementedError()
 
-    def _select_learning_action(self, state: State):
+    def _select_learning_action(self, state: State, **kwargs):
         raise NotImplementedError()
 
-    def perturb(self):
-        for (state, action) in self._q_definition:
-            self._q_definition[(state, action)] += np.random.uniform()
+    def save_q(self, filename: str, **kwargs) -> None:
+        pickle.dump(self._q_definition, filename, **kwargs)
+
+    def load_q(self, filename: str, **kwargs) -> None:
+        self._q_definition = pickle.load(filename, **kwargs)
