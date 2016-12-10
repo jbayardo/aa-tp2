@@ -12,7 +12,7 @@ from utils import *
 import os
 
 
-def dump_statistics(file_identifier: str, file_type: str, statistics, identifier: int, params):
+def dump_statistics(file_identifier: str, file_type: str, statistics, identifier: int, params, left_name, right_name):
     directory = 'results' 
     if not os.path.exists(directory):
       os.mkdir(directory)
@@ -36,13 +36,15 @@ def dump_statistics(file_identifier: str, file_type: str, statistics, identifier
 
         data.append({
             'episode_number': entry['episode_number'],
-            'left_won': won,
-            'right_won': loss,
+            left_name: won,
+            right_name: loss,
             'tied': tied
         })
 
     data = pandas.DataFrame.from_records(data, index='episode_number')
-    data = data[['left_won', 'tied', 'right_won']].rolling(window=500).mean()
+    data = data[[left_name, 'tied', right_name]].rolling(window=500).mean()
+    #data = pandas.DataFrame(data, index='episode_number', columns = [left_name, 'ties', right_name])
+    #data = data[['left_won', 'tied', 'right_won']].rolling(window=500).mean()
     axes = data.plot(yticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
     axes.text(2, 6, 'Parameters A')
     axes.text(4, 6, 'Parameters B')
@@ -91,8 +93,8 @@ def emulate_match(params):
 
     trainer = LearningMatch(left_agent, right_agent)
     training_statistics, playing_statistics = trainer.train_many_matches(run_id, NUMBER_OF_MATCHES)
-    dump_statistics(run_id, 'training', training_statistics, 0, left_parameters)
-    dump_statistics(run_id, 'playing', playing_statistics, 0, right_parameters)
+    dump_statistics(run_id, 'training', training_statistics, 0, left_parameters, left_class_name, right_class_name)
+    dump_statistics(run_id, 'playing', playing_statistics, 0, right_parameters, left_class_name, right_class_name)
 
 if __name__ == '__main__':
     matplotlib.pyplot.style.use('ggplot')
@@ -125,7 +127,7 @@ if __name__ == '__main__':
             preinstantiated_agents.append((agent, combination))
 
     # Actually run the matches
-    NUMBER_OF_MATCHES = 70000
+    NUMBER_OF_MATCHES = 120000
     #for elem in preinstantiated_agents:
     #  print(elem)
     #print('Emulating {} matches per run'.format(NUMBER_OF_MATCHES))
