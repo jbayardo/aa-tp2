@@ -67,12 +67,16 @@ def emulate_match(params):
     #run_id = str(uuid.uuid4())[:8]
     if 'epsilon' in left_parameters and 'epsilon' in right_parameters:
       run_id = left_class_name + '_' +  str(left_parameters['epsilon']) + '_VS_' + right_class_name + '_' + str(right_parameters['epsilon'])
+      left_class_name  = left_class_name + ': ' + str(left_parameters['epsilon'])
+      right_class_name = right_class_name + ': ' + str(right_parameters['epsilon'])
 
     elif 'epsilon' in left_parameters:
       run_id = left_class_name + '_' +  str(left_parameters['epsilon']) + '_VS_' + right_class_name
+      left_class_name  = left_class_name + ': ' + str(left_parameters['epsilon'])
 
     elif 'epsilon' in right_parameters:
       run_id = left_class_name +  '_VS_' + right_class_name + '_' +  str(right_parameters['epsilon'])
+      right_class_name = right_class_name + ': ' + str(right_parameters['epsilon'])
 
     else:
       run_id = left_class_name +  '_VS_' + right_class_name
