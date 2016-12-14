@@ -1,9 +1,9 @@
 import uuid
-import matplotlib.pyplot
+
+import matplotlib.pyplot as plt
 import pandas
 import itertools
 import concurrent.futures
-import re
 
 from learning_mechanism import LearningMatch
 from abstract.random_agent import *
@@ -12,96 +12,99 @@ from utils import *
 import os
 
 
-def dump_statistics(file_identifier: str, file_type: str, statistics, identifier: int, params, left_name, right_name):
-    directory = 'results' 
+def generate_parameter_string(params):
+    output = str(params['identifier']) + ': ' + params['__class__'] + '\n    '
+
+    for key in params:
+        if key == 'identifier' or key == '__class__':
+            continue
+
+        output += key
+        output += ': '
+
+        if callable(params[key]):
+            output += params[key].__name__
+        else:
+            output += str(params[key])
+
+        output += '\n    '
+
+    output = output[:-2]
+    return output
+
+
+def dump_statistics(file_identifier: str, file_type: str, statistics, left_params, right_params):
+    directory = 'results'
     if not os.path.exists(directory):
-      os.mkdir(directory)
+        os.mkdir(directory)
 
-    data = pandas.DataFrame.from_records(statistics, index='episode_number')
-    data.to_csv('{0}_{1}.csv'.format(directory + '/' + file_identifier, file_type))
+    df = pandas.DataFrame.from_records(statistics, index='episode_number')
+    df.to_csv('{0}_{1}.csv'.format(directory + '/' + file_identifier, file_type))
 
-    data = []
+    left_player_name = 'Player ' + str(left_params['identifier'])
+    right_player_name = 'Player ' + str(right_params['identifier'])
+
+    df = []
     for entry in statistics:
-        if entry['winner'] == identifier:
+        tied = 0.0
+        won = 0.0
+        loss = 0.0
+
+        if entry['winner'] == left_params['identifier']:
             won = 1.0
             loss = 0.0
-        else:
+        elif entry['winner'] == right_params['identifier']:
             won = 0.0
             loss = 1.0
-
-        if entry['winner'] == -1:
-            tied = 1.0
         else:
-            tied = 0.0
+            tied = 1.0
 
-        data.append({
+        df.append({
             'episode_number': entry['episode_number'],
-            left_name: won,
-            right_name: loss,
-            'tied': tied
+            left_player_name: won,
+            right_player_name: loss,
+            'Ties': tied
         })
 
-    data = pandas.DataFrame.from_records(data, index='episode_number')
-    data = data[[left_name, 'tied', right_name]].rolling(window=500).mean()
-    #data = pandas.DataFrame(data, index='episode_number', columns = [left_name, 'ties', right_name])
-    #data = data[['left_won', 'tied', 'right_won']].rolling(window=500).mean()
-    axes = data.plot(yticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    axes.text(2, 6, 'Parameters A')
-    axes.text(4, 6, 'Parameters B')
-    axes.get_figure().savefig('{0}_{1}.svg'.format(directory + '/' +  file_identifier, file_type))
-    #axes.savefig('{0}_{1}.svg'.format(directory + '/' +  file_identifier, file_type))
+    df = pandas.DataFrame.from_records(df, index='episode_number')
+    df = df[[left_player_name, 'Ties', right_player_name]].rolling(window=500).mean()
+    axes = df.plot(yticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    plt.xlabel('Episode Number')
+    plt.ylabel('Avg. Wins Over 500 Matches')
+    plt.subplots_adjust(top=0.95, right=0.95, left=0.05, bottom=0.3)
+    plt.figtext(0.01, 0.05, generate_parameter_string(left_params), fontsize='large')
+    plt.figtext(0.5, 0.05, generate_parameter_string(right_params), fontsize='large')
+    axes.get_figure().savefig('{0}_{1}.svg'.format(directory + '/' + file_identifier, file_type))
+
 
 def emulate_match(params):
     (left_data, right_data) = params
     (left_class, left_parameters) = left_data
     (right_class, right_parameters) = right_data
+    del right_data, left_data
 
-    left_class_name = str(left_class.__name__)
-    if left_class_name != 'FourRowAgent':
-      left_class_name  = re.sub('\FourRowAgent$', '', left_class_name)
-
-    right_class_name = str(right_class.__name__)
-    if right_class_name != 'FourRowAgent':
-      right_class_name = re.sub('\FourRowAgent$', '', right_class_name)
-
-    #run_id = str(uuid.uuid4())[:8]
-    if 'epsilon' in left_parameters and 'epsilon' in right_parameters:
-      run_id = left_class_name + '_' +  str(left_parameters['epsilon']) + '_VS_' + right_class_name + '_' + str(right_parameters['epsilon'])
-      left_class_name  = left_class_name + ': ' + str(left_parameters['epsilon'])
-      right_class_name = right_class_name + ': ' + str(right_parameters['epsilon'])
-
-    elif 'epsilon' in left_parameters:
-      run_id = left_class_name + '_' +  str(left_parameters['epsilon']) + '_VS_' + right_class_name
-      left_class_name  = left_class_name + ': ' + str(left_parameters['epsilon'])
-
-    elif 'epsilon' in right_parameters:
-      run_id = left_class_name +  '_VS_' + right_class_name + '_' +  str(right_parameters['epsilon'])
-      right_class_name = right_class_name + ': ' + str(right_parameters['epsilon'])
-
-    else:
-      run_id = left_class_name +  '_VS_' + right_class_name
-
-    #print('Running match between instance of {} and {}'.format(left_class_name, right_class_name))
-    #print('Parameters for left agent:', left_parameters)
-    #print('Parameters for right agent:', right_parameters)
-
-    left_parameters.update({
-        'identifier': 0
-    })
+    left_parameters = left_parameters.copy()
+    left_parameters['identifier'] = 0
     left_agent = left_class(**left_parameters)
 
-    right_parameters.update({
-        'identifier': 1
-    })
+    right_parameters = right_parameters.copy()
+    right_parameters['identifier'] = 1
     right_agent = right_class(**right_parameters)
+
+    left_parameters['__class__'] = left_class.__name__
+    right_parameters['__class__'] = right_class.__name__
+
+    run_id = str(uuid.uuid4())[:8]
+    print(run_id, 'Parameters for left agent:', left_parameters)
+    print(run_id, 'Parameters for right agent:', right_parameters)
 
     trainer = LearningMatch(left_agent, right_agent)
     training_statistics, playing_statistics = trainer.train_many_matches(run_id, NUMBER_OF_MATCHES)
-    dump_statistics(run_id, 'training', training_statistics, 0, left_parameters, left_class_name, right_class_name)
-    dump_statistics(run_id, 'playing', playing_statistics, 0, right_parameters, left_class_name, right_class_name)
+    dump_statistics(run_id, 'training', training_statistics, left_parameters, right_parameters)
+    dump_statistics(run_id, 'playing', playing_statistics, left_parameters, right_parameters)
 
 if __name__ == '__main__':
-    matplotlib.pyplot.style.use('ggplot')
+    plt.style.use('ggplot')
 
     agents = []
 
@@ -109,18 +112,18 @@ if __name__ == '__main__':
 
     agents.append((EpsilonGreedyFourRowAgent, {
         'epsilon': np.array([0.1, 0.3, 0.6, 0.9]),
-        'learning_rate': [decaying_learning_rate],
-        'discount_factor': [decaying_discount_factor]
+        'learning_rate': [turn_decay_50],
+        'discount_factor': [const_08]
     }))
 
     agents.append((FourRowAgent, {
-        'learning_rate': [decaying_learning_rate],
-        'discount_factor': [decaying_discount_factor]
+        'learning_rate': [turn_decay_50],
+        'discount_factor': [const_08]
     }))
 
     agents.append((SoftmaxFourRowAgent, {
-        'learning_rate': [decaying_learning_rate],
-        'discount_factor': [decaying_discount_factor],
+        'learning_rate': [turn_decay_50],
+        'discount_factor': [const_08],
         'temperature': [temperature]
     }))
 
@@ -131,10 +134,7 @@ if __name__ == '__main__':
             preinstantiated_agents.append((agent, combination))
 
     # Actually run the matches
-    NUMBER_OF_MATCHES = 120000
-    #for elem in preinstantiated_agents:
-    #  print(elem)
-    #print('Emulating {} matches per run'.format(NUMBER_OF_MATCHES))
+    NUMBER_OF_MATCHES = 12000
 
     executor = concurrent.futures.ProcessPoolExecutor(max_workers=3)
     for data in itertools.combinations(preinstantiated_agents, 2):

@@ -1,10 +1,11 @@
 import numpy as np
 
-def decaying_learning_rate(agent, episode, turn):
+
+def turn_decay_50(agent, episode, turn):
     return np.float64(turn)/np.float64(50.0)
 
 
-def decaying_discount_factor(agent, episode, turn):
+def const_08(agent, episode, turn):
     return 0.8
 
 

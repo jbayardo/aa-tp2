@@ -13,8 +13,8 @@ _size = _rows * _columns
 # Ensure the actual board size is lower than the maximum than can be held by an uint64
 assert (_rows1 * _columns) < 64
 
-# Generate the bitmask for checking if the entire board has been filled idea
-# taken from https://github.com/nwestbury/pyConnect4/blob/master/board.py
+# Generate the bitmask for checking if the entire board has been filled; idea
+# inspired by https://github.com/nwestbury/pyConnect4/blob/master/board.py
 _full_board = np.uint64(0)
 for i in range(_columns):
     for j in range(_rows):
