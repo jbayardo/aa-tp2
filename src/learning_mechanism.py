@@ -5,18 +5,18 @@ import random
 
 
 class LearningMatch(object):
-    def __init__(self, teacher: FourRowAgent, student: FourRowAgent):
-        self.teacher = teacher
-        self.student = student
-        assert self.teacher.identifier != self.student.identifier
+    def __init__(self, right, left):
+        self.right = right
+        self.left = left
+        assert self.right.identifier != self.left.identifier
 
     def train_single_match(self, episode: int, state: State):
-        self.student.enable_learning()
-        self.teacher.enable_learning()
+        self.left.enable_learning()
+        self.right.enable_learning()
 
         # Generate what the order of playing will be. This is to avoid having the learning agent only know how to play
         # from the beginning set of states or similar.
-        players = [self.student, self.teacher]
+        players = [self.left, self.right]
         random.shuffle(players)
 
         previous_action = None
@@ -56,12 +56,12 @@ class LearningMatch(object):
         return state, turns
 
     def play_single_match(self, state: State):
-        self.student.disable_learning()
-        self.teacher.disable_learning()
+        self.left.disable_learning()
+        self.right.disable_learning()
 
         # Generate what the order of playing will be. This is to avoid having the learning agent only know how to play
         # from the beginning set of states or similar.
-        players = [self.student, self.teacher]
+        players = [self.left, self.right]
         random.shuffle(players)
 
         # Keep track of numbers
@@ -98,7 +98,9 @@ class LearningMatch(object):
             training_samples.append({
                 'episode_number': episode,
                 'winner': output.winner,
-                'turns': turns
+                'turns': turns,
+                'q_avg_' + str(self.left.identifier): self.left._q_average() if hasattr(self.left, '_q_average') else 0.0,
+                'q_avg_' + str(self.right.identifier): self.right._q_average() if hasattr(self.right, '_q_average') else 0.0
             })
 
             output, turns = self.play_single_match(start_state)
@@ -106,7 +108,9 @@ class LearningMatch(object):
             running_samples.append({
                 'episode_number': episode,
                 'winner': output.winner,
-                'turns': turns
+                'turns': turns,
+                'q_avg_' + str(self.left.identifier): self.left._q_average() if hasattr(self.left, '_q_average') else 0.0,
+                'q_avg_' + str(self.right.identifier): self.right._q_average() if hasattr(self.right, '_q_average') else 0.0
             })
 
         return training_samples, running_samples

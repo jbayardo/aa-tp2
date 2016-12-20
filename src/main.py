@@ -63,18 +63,24 @@ def dump_statistics(file_identifier: str, file_type: str, statistics, left_param
             'episode_number': entry['episode_number'],
             left_player_name: won,
             right_player_name: loss,
-            'Ties': tied
+            'Ties': tied,
+            left_player_name + ' Avg. Q': entry['q_avg_' + str(left_params['identifier'])],
+            right_player_name + ' Avg. Q': entry['q_avg_' + str(right_params['identifier'])]
         })
 
     df = pandas.DataFrame.from_records(df, index='episode_number')
-    df = df[[left_player_name, 'Ties', right_player_name]].rolling(window=500).mean()
-    axes = df.plot(yticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    df2 = df[[left_player_name, 'Ties', right_player_name]].rolling(window=500).mean()
+    axes = df2.plot(yticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
     plt.xlabel('Episode Number')
     plt.ylabel('Avg. Wins Over 500 Matches')
     plt.subplots_adjust(top=0.95, right=0.95, left=0.05, bottom=0.3)
     plt.figtext(0.01, 0.05, generate_parameter_string(left_params), fontsize='large')
     plt.figtext(0.5, 0.05, generate_parameter_string(right_params), fontsize='large')
     axes.get_figure().savefig('{0}_{1}.svg'.format(directory + '/' + file_identifier, file_type))
+
+    if file_type == 'training':
+        df2 = df[[left_player_name + ' Avg. Q', right_player_name + ' Avg. Q']].rolling(window=100).mean()
+        df2.plot().get_figure().savefig('{0}_{1}_avg_q.svg'.format(directory + '/' + file_identifier, file_type))
 
 
 def emulate_match(params):
@@ -133,9 +139,12 @@ if __name__ == '__main__':
         for combination in [dict(zip(parameters, x)) for x in itertools.product(*parameters.values())]:
             preinstantiated_agents.append((agent, combination))
 
-    # Actually run the matches
-    NUMBER_OF_MATCHES = 12000
+    del agents
 
-    executor = concurrent.futures.ProcessPoolExecutor(max_workers=3)
+    # Actually run the matches
+    NUMBER_OF_MATCHES = 50000
+    N_PROCESSORS = 4
+
+    executor = concurrent.futures.ProcessPoolExecutor(max_workers=N_PROCESSORS-1)
     for data in itertools.combinations(preinstantiated_agents, 2):
         executor.submit(emulate_match, data)

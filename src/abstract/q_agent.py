@@ -8,6 +8,7 @@ class QAgent(Agent):
     def __init__(self, *args, **kwargs):
         super(QAgent, self).__init__(*args, **kwargs)
         self._q_definition = None
+        self._q_sum = 0.0
         self._q_initialize()
 
         self._learning_rate = kwargs['learning_rate']
@@ -59,10 +60,15 @@ class QAgent(Agent):
         self._q_definition = {}
 
     def _q_update(self, state: State, action, value: np.float64) -> None:
+        self._q_sum -= self._q_definition.get((state, action), 0.0)
+        self._q_sum += value
         self._q_definition[(state, action)] = value
 
     def _q(self, state: State, action) -> np.float64:
         return self._q_definition.get((state, action), 1.0)
+
+    def _q_average(self):
+        return self._q_sum / len(self._q_definition)
 
     def _reward(self, state: State, action, new_state: State) -> np.float64:
         raise NotImplementedError()
