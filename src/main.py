@@ -1,15 +1,14 @@
-import uuid
-
-import matplotlib.pyplot as plt
-import pandas
-import itertools
 import concurrent.futures
-
-from learning_mechanism import LearningMatch
-from abstract.random_agent import *
-from impl.four_row_agent import *
-from utils import *
+import itertools
+import logging
 import os
+import pickle
+import time
+
+import settings
+from four_row.fourrowenvironment import FourRowEnvironment
+from gym import Gym
+from turnbasedmatch import TurnBasedMatch
 
 
 def generate_parameter_string(params):
@@ -33,58 +32,21 @@ def generate_parameter_string(params):
     return output
 
 
-def dump_statistics(file_identifier: str, file_type: str, statistics, left_params, right_params):
-    directory = 'results'
-    if not os.path.exists(directory):
-        os.mkdir(directory)
+class ExperimentFilter(logging.Filter):
+    def __init__(self, run_version, experiment_id):
+        super().__init__()
 
-    df = pandas.DataFrame.from_records(statistics, index='episode_number')
-    df.to_csv('{0}_{1}.csv'.format(directory + '/' + file_identifier, file_type))
+        self._run_version = run_version
+        self._experiment_id = experiment_id
 
-    left_player_name = 'Player ' + str(left_params['identifier'])
-    right_player_name = 'Player ' + str(right_params['identifier'])
-
-    df = []
-    for entry in statistics:
-        tied = 0.0
-        won = 0.0
-        loss = 0.0
-
-        if entry['winner'] == left_params['identifier']:
-            won = 1.0
-            loss = 0.0
-        elif entry['winner'] == right_params['identifier']:
-            won = 0.0
-            loss = 1.0
-        else:
-            tied = 1.0
-
-        df.append({
-            'episode_number': entry['episode_number'],
-            left_player_name: won,
-            right_player_name: loss,
-            'Ties': tied,
-            left_player_name + ' Avg. Q': entry['q_avg_' + str(left_params['identifier'])],
-            right_player_name + ' Avg. Q': entry['q_avg_' + str(right_params['identifier'])]
-        })
-
-    df = pandas.DataFrame.from_records(df, index='episode_number')
-    df2 = df[[left_player_name, 'Ties', right_player_name]].rolling(window=500).mean()
-    axes = df2.plot(yticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    plt.xlabel('Episode Number')
-    plt.ylabel('Avg. Wins Over 500 Matches')
-    plt.subplots_adjust(top=0.95, right=0.95, left=0.05, bottom=0.3)
-    plt.figtext(0.01, 0.05, generate_parameter_string(left_params), fontsize='large')
-    plt.figtext(0.5, 0.05, generate_parameter_string(right_params), fontsize='large')
-    axes.get_figure().savefig('{0}_{1}.svg'.format(directory + '/' + file_identifier, file_type))
-
-    if file_type == 'training':
-        df2 = df[[left_player_name + ' Avg. Q', right_player_name + ' Avg. Q']].rolling(window=100).mean()
-        df2.plot().get_figure().savefig('{0}_{1}_avg_q.svg'.format(directory + '/' + file_identifier, file_type))
+    def filter(self, record):
+        record.run_version = self._run_version
+        record.experiment_id = self._experiment_id
+        return True
 
 
-def emulate_match(params):
-    (left_data, right_data) = params
+def emulate(parameters):
+    (left_data, right_data) = parameters
     (left_class, left_parameters) = left_data
     (right_class, right_parameters) = right_data
     del right_data, left_data
@@ -100,51 +62,59 @@ def emulate_match(params):
     left_parameters['__class__'] = left_class.__name__
     right_parameters['__class__'] = right_class.__name__
 
-    run_id = str(uuid.uuid4())[:8]
-    print(run_id, 'Parameters for left agent:', left_parameters)
-    print(run_id, 'Parameters for right agent:', right_parameters)
+    # The experiment_id is supposed to be unique for every parameter set possible. The idea is that this identifies
+    # uniquely what the experiment is.
+    experiment_id = str(hash((hash(frozenset(left_parameters.items())), hash(frozenset(right_parameters.items())))))
 
-    trainer = LearningMatch(left_agent, right_agent)
-    training_statistics, playing_statistics = trainer.train_many_matches(run_id, NUMBER_OF_MATCHES)
-    dump_statistics(run_id, 'training', training_statistics, left_parameters, right_parameters)
-    dump_statistics(run_id, 'playing', playing_statistics, left_parameters, right_parameters)
+    results_path = os.path.join(os.getcwd(), experiment_id)
+    os.makedirs(results_path, exist_ok=True)
+
+    with open(os.path.join(results_path, 'parameters.pickle'), 'wb') as parameters_file_handle:
+        pickle.dump(parameters, parameters_file_handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    file_log_handler = logging.FileHandler(os.path.join(results_path, 'events.log'))
+    file_log_handler.setLevel(logging.DEBUG)
+
+    stream_log_handler = logging.StreamHandler()
+    stream_log_handler.setLevel(logging.INFO)
+    stream_log_handler.setFormatter(logging.Formatter("%(asctime)-15s %(message)s"))
+
+    log = logging.getLogger(experiment_id)
+    log.setLevel(logging.DEBUG)
+
+    log.addHandler(file_log_handler)
+    log.addHandler(stream_log_handler)
+    log.addFilter(ExperimentFilter(run_version, experiment_id))
+
+    log.info('Experiment %s start. Results at %s', experiment_id, results_path)
+    gym = Gym(FourRowEnvironment, TurnBasedMatch, left_agent, right_agent)
+    samples = gym.train(experiment_id, results_path,
+                        settings.EPOCHS, settings.TRAINING_EPISODES_PER_EPOCH, settings.VALIDATION_EPISODES_PER_EPOCH)
+    log.info('Experiment %s end. Results at %s', experiment_id, results_path)
+
+    samples_file_path = os.path.join(results_path, 'samples.pickle')
+    with open(samples_file_path, 'wb') as samples_file_handle:
+        pickle.dump(samples, samples_file_handle, protocol=pickle.HIGHEST_PROTOCOL)
+    log.debug('Samples file has been stored at %s', samples_file_path)
+
 
 if __name__ == '__main__':
-    plt.style.use('ggplot')
+    # The run_version is a unique identifier given to each experiment. The important property about it is that it
+    # monotonically increases with time, so that results from two consecutive runs can be evaluated.
+    run_version = str(time.monotonic())
 
-    agents = []
-
-    agents.append((RandomAgent, {}))
-
-    agents.append((EpsilonGreedyFourRowAgent, {
-        'epsilon': np.array([0.1, 0.3, 0.6, 0.9]),
-        'learning_rate': [turn_decay_50],
-        'discount_factor': [const_08]
-    }))
-
-    agents.append((FourRowAgent, {
-        'learning_rate': [turn_decay_50],
-        'discount_factor': [const_08]
-    }))
-
-    agents.append((SoftmaxFourRowAgent, {
-        'learning_rate': [turn_decay_50],
-        'discount_factor': [const_08],
-        'temperature': [temperature]
-    }))
-
-    # Generate all possible instances for every agent
-    preinstantiated_agents = []
-    for (agent, parameters) in agents:
-        for combination in [dict(zip(parameters, x)) for x in itertools.product(*parameters.values())]:
-            preinstantiated_agents.append((agent, combination))
-
-    del agents
+    # Set the path into which we will dump our all files
+    experiment_path = os.path.join(settings.EXPERIMENT_PATH, run_version)
+    os.makedirs(experiment_path, exist_ok=True)
+    os.chdir(experiment_path)
 
     # Actually run the matches
-    NUMBER_OF_MATCHES = 50000
-    N_PROCESSORS = 4
+    flights = itertools.combinations(settings.FLIGHTS, 2)
 
-    executor = concurrent.futures.ProcessPoolExecutor(max_workers=N_PROCESSORS-1)
-    for data in itertools.combinations(preinstantiated_agents, 2):
-        executor.submit(emulate_match, data)
+    if settings.PARALLEL_RUN:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=settings.PARALLEL_WORKERS) as executor:
+            for flight in flights:
+                executor.submit(emulate, flight)
+    else:
+        for flight in flights:
+            emulate(flight)

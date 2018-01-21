@@ -91,3 +91,5 @@ ENV/
 .idea/
 *.svg
 *.csv
+
+results/

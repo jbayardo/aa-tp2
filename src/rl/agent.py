@@ -1,11 +1,15 @@
-from abstract.state import State
+import logging
 import uuid
+
+from rl.environment import Environment
 
 
 class Agent(object):
     def __init__(self, *args, **kwargs):
+        assert 'identifier' in kwargs
         assert isinstance(kwargs['identifier'], int)
         assert kwargs['identifier'] >= 0
+
         self._identifier = kwargs['identifier']
 
         if 'name' in kwargs:
@@ -13,8 +17,6 @@ class Agent(object):
         else:
             self._name = uuid.uuid4()
         self._name = str(self._name)
-
-        self._learning = True
 
     @property
     def name(self) -> str:
@@ -24,18 +26,11 @@ class Agent(object):
     def identifier(self) -> int:
         return self._identifier
 
-    def policy(self, state: State, **kwargs):
+    def policy(self, environment: Environment, **kwargs):
         raise NotImplementedError()
 
-    @property
-    def learning(self) -> bool:
-        return self._learning
+    def feedback(self, previous: Environment, action, current: Environment, **kwargs) -> None:
+        pass
 
-    def disable_learning(self) -> None:
-        self._learning = False
-
-    def enable_learning(self) -> None:
-        self._learning = True
-
-    def toggle_learning(self) -> None:
-        self._learning = not self._learning
+    def deploy(self) -> 'Agent':
+        return self

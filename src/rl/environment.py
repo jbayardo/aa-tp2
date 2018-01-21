@@ -1,9 +1,9 @@
-class State(object):
+class Environment(object):
     @property
     def actions(self):
         raise NotImplementedError()
 
-    def execute(self, agent: 'Agent', action) -> 'State':
+    def execute(self, agent: 'Agent', action) -> 'Environment':
         raise NotImplementedError()
 
     @property
@@ -11,5 +11,5 @@ class State(object):
         raise NotImplementedError()
 
     @staticmethod
-    def generate() -> 'State':
+    def generate() -> 'Environment':
         raise NotImplementedError()

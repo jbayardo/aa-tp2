@@ -1,6 +1,8 @@
 import copy
-from abstract.state import State
+
 import numpy as np
+
+from rl.environment import Environment
 
 _rows = 6
 _columns = 7
@@ -39,7 +41,7 @@ def _is_winning_board(board) -> bool:
     return False
 
 
-class FourRowState(State):
+class FourRowEnvironment(Environment):
     def __init__(self):
         self._heights = np.zeros(_columns, dtype=np.uint8)
         self._boards = np.zeros(2, dtype=np.uint64)
@@ -58,8 +60,8 @@ class FourRowState(State):
         return [i for i in range(_columns) if self._heights[i] < _rows]
 
     @staticmethod
-    def generate() -> 'FourRowState':
-        return FourRowState()
+    def generate() -> 'FourRowEnvironment':
+        return FourRowEnvironment()
 
     def print_board(self):
         print(self._boards)
@@ -82,7 +84,7 @@ class FourRowState(State):
 
         print("")
 
-    def execute(self, agent: 'FourRowAgent', action) -> 'FourRowState':
+    def execute(self, agent: 'FourRowAgent', action) -> 'FourRowEnvironment':
         assert action < _columns
         assert self._heights[action] < _rows
         assert not self.is_terminal
@@ -136,10 +138,10 @@ class FourRowState(State):
     def __hash__(self):
         return hash((self._boards[0], self._boards[1]))
 
-    def __eq__(self, other: 'FourRowState') -> bool:
+    def __eq__(self, other: 'FourRowEnvironment') -> bool:
         return self.board == other.board
 
-    def __ne__(self, other: 'FourRowState') -> bool:
+    def __ne__(self, other: 'FourRowEnvironment') -> bool:
         # Not strictly necessary, but to avoid having both x==y and x!=y
         # True at the same time
         return not (self == other)
