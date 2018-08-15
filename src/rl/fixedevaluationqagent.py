@@ -15,7 +15,7 @@ class FixedEvaluationQAgent(Agent):
     def policy(self, environment: Environment, **kwargs):
         assert not environment.is_terminal
 
-        available_actions = environment.actions
+        available_actions = environment.actions(self)
         scores = [self._q(environment, action) for action in available_actions]
 
         sorted_actions = sorted(zip(available_actions, scores), key=lambda x: x[1])

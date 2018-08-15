@@ -6,4 +6,4 @@ from rl.environment import Environment
 
 class RandomAgent(Agent):
     def policy(self, environment: Environment, **kwargs):
-        return random.choice(environment.actions)
+        return random.choice(environment.actions(self))

@@ -32,7 +32,7 @@ class QAgent(Agent):
         turns = kwargs['turns']
 
         reward = self._reward(previous, action, current)
-        scores = np.array([self._q(current, action) for action in current.actions])
+        scores = np.array([self._q(current, action) for action in current.actions(self)])
 
         maximum_factor = 0.0
         if len(scores) > 0:

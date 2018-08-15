@@ -1,6 +1,5 @@
 class Environment(object):
-    @property
-    def actions(self):
+    def actions(self, agent: 'Agent'):
         raise NotImplementedError()
 
     def execute(self, agent: 'Agent', action) -> 'Environment':

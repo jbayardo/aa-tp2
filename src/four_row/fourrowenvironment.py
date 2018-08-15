@@ -55,8 +55,7 @@ class FourRowEnvironment(Environment):
     def rows():
         return _rows
 
-    @property
-    def actions(self):
+    def actions(self, agent: 'FourRowAgent'):
         return [i for i in range(_columns) if self._heights[i] < _rows]
 
     @staticmethod

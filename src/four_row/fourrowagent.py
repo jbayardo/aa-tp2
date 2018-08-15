@@ -8,7 +8,7 @@ from four_row.fourrowenvironment import FourRowEnvironment
 
 class FourRowAgent(QAgent):
     def _select_learning_action(self, environment: FourRowEnvironment, **kwargs):
-        return environment.actions[0]
+        return environment.actions(self)[0]
 
     def _reward(self, previous: FourRowEnvironment, action, current: FourRowEnvironment) -> float:
         d = float(current._discs_filled)
@@ -39,9 +39,9 @@ class EpsilonGreedyFourRowAgent(FourRowAgent):
 
     def _select_learning_action(self, environment: FourRowEnvironment, **kwargs):
         if random.random() < self._epsilon:
-            return random.choice(environment.actions)
+            return random.choice(environment.actions(self))
 
-        return max(environment.actions, key=lambda action: self._q(environment, action))
+        return max(environment.actions(self), key=lambda action: self._q(environment, action))
 
 
 class SoftmaxFourRowAgent(FourRowAgent):
@@ -58,6 +58,6 @@ class SoftmaxFourRowAgent(FourRowAgent):
         return dist
 
     def _select_learning_action(self, environment: FourRowEnvironment, **kwargs):
-        actions = [self._q(environment, action) for action in environment.actions]
-        pairs = zip(environment.actions, self._softmax(actions, self._temperature(self, kwargs['episode'], kwargs['turns'])))
+        actions = [self._q(environment, action) for action in environment.actions(self)]
+        pairs = zip(environment.actions(self), self._softmax(actions, self._temperature(self, kwargs['episode'], kwargs['turns'])))
         return max(pairs, key=lambda x: x[1])[0]
