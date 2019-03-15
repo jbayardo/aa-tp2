@@ -1,8 +1,10 @@
 import itertools
 
-from rl.randomagent import *
+from rl.agent.randomagent import *
 from four_row.fourrowagent import *
 from utils import *
+
+GATHER_STATISTICS = True
 
 EPOCHS = 1
 TRAINING_EPISODES_PER_EPOCH = 1000

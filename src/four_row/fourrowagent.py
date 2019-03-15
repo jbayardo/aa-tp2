@@ -2,11 +2,11 @@ import random
 
 import numpy as np
 
-from rl.qagent import QAgent
+from rl.agent.qagent import DoubleQAgent
 from four_row.fourrowenvironment import FourRowEnvironment
 
 
-class FourRowAgent(QAgent):
+class FourRowAgent(DoubleQAgent):
     def _select_learning_action(self, environment: FourRowEnvironment, **kwargs):
         return environment.actions[0]
 
@@ -30,12 +30,11 @@ class FourRowAgent(QAgent):
 
 
 class EpsilonGreedyFourRowAgent(FourRowAgent):
-    def __init__(self, *args, **kwargs):
-        assert 'epsilon' in kwargs
-        assert 0 <= kwargs['epsilon'] <= 1.0
+    def __init__(self, epsilon: float, *args, **kwargs):
+        assert 0 <= epsilon <= 1.0
 
-        super(EpsilonGreedyFourRowAgent, self).__init__(*args, **kwargs)
-        self._epsilon = kwargs['epsilon']
+        super().__init__(*args, **kwargs)
+        self._epsilon = epsilon
 
     def _select_learning_action(self, environment: FourRowEnvironment, **kwargs):
         if random.random() < self._epsilon:
@@ -45,11 +44,9 @@ class EpsilonGreedyFourRowAgent(FourRowAgent):
 
 
 class SoftmaxFourRowAgent(FourRowAgent):
-    def __init__(self, *args, **kwargs):
-        assert 'temperature' in kwargs
-
-        super(SoftmaxFourRowAgent, self).__init__(*args, **kwargs)
-        self._temperature = kwargs['temperature']
+    def __init__(self, temperature, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._temperature = temperature
 
     @staticmethod
     def _softmax(w, t = 1.0):

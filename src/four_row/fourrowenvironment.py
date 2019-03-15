@@ -2,7 +2,8 @@ import copy
 
 import numpy as np
 
-from rl.environment import Environment
+import rl.environment.baseenvironment
+import rl.environment.goalmatchenvironment
 
 _rows = 6
 _columns = 7
@@ -41,7 +42,7 @@ def _is_winning_board(board) -> bool:
     return False
 
 
-class FourRowEnvironment(Environment):
+class FourRowEnvironment(rl.environment.goalmatchenvironment.GoalMatchEnvironment):
     def __init__(self):
         self._heights = np.zeros(_columns, dtype=np.uint8)
         self._boards = np.zeros(2, dtype=np.uint64)

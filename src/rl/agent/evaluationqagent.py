@@ -1,20 +1,18 @@
 import random
 
-from rl.agent import Agent
-from rl.environment import Environment
-from rl.qtable import QTable
+from rl.agent.baseagent import BaseAgent
+from rl.environment.baseenvironment import BaseEnvironment
+from rl.agent.qtable import QTable
 
 
-class FixedEvaluationQAgent(Agent):
+class EvaluationQAgent(BaseAgent):
     def __init__(self, q: QTable, *args, **kwargs):
         assert q is not None
 
-        super(FixedEvaluationQAgent, self).__init__(*args, **kwargs)
+        super(EvaluationQAgent, self).__init__(*args, **kwargs)
         self._q = q
 
-    def policy(self, environment: Environment, **kwargs):
-        assert not environment.is_terminal
-
+    def policy(self, environment: BaseEnvironment, **kwargs):
         available_actions = environment.actions
         scores = [self._q(environment, action) for action in available_actions]
 
@@ -32,5 +30,5 @@ class FixedEvaluationQAgent(Agent):
 
         return self._select_action_from_best(environment, selected_actions)
 
-    def _select_action_from_best(self, state: Environment, actions):
+    def _select_action_from_best(self, state: BaseEnvironment, actions):
         return random.choice(actions)

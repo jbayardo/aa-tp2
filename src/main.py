@@ -7,8 +7,8 @@ import time
 
 import settings
 from four_row.fourrowenvironment import FourRowEnvironment
-from gym import Gym
-from turnbasedmatch import TurnBasedMatch
+from rl.gym import Gym
+from rl.horizon.turnbasedmatch import TurnBasedMatch
 
 
 def generate_parameter_string(params):
@@ -72,12 +72,15 @@ def emulate(parameters):
     with open(os.path.join(results_path, 'parameters.pickle'), 'wb') as parameters_file_handle:
         pickle.dump(parameters, parameters_file_handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+    formatter = logging.Formatter("%(asctime)-15s V=%(run_version)s ID=%(experiment_id)s %(message)s")
+
     file_log_handler = logging.FileHandler(os.path.join(results_path, 'events.log'))
     file_log_handler.setLevel(logging.DEBUG)
+    file_log_handler.setFormatter(formatter)
 
     stream_log_handler = logging.StreamHandler()
     stream_log_handler.setLevel(logging.INFO)
-    stream_log_handler.setFormatter(logging.Formatter("%(asctime)-15s %(message)s"))
+    stream_log_handler.setFormatter(formatter)
 
     log = logging.getLogger(experiment_id)
     log.setLevel(logging.DEBUG)
@@ -87,9 +90,10 @@ def emulate(parameters):
     log.addFilter(ExperimentFilter(run_version, experiment_id))
 
     log.info('Experiment %s start. Results at %s', experiment_id, results_path)
-    gym = Gym(FourRowEnvironment, TurnBasedMatch, left_agent, right_agent)
+    gym = Gym(FourRowEnvironment, FourRowEnvironment.generate, TurnBasedMatch, left_agent, right_agent)
     samples = gym.train(experiment_id, results_path,
-                        settings.EPOCHS, settings.TRAINING_EPISODES_PER_EPOCH, settings.VALIDATION_EPISODES_PER_EPOCH)
+                        settings.EPOCHS, settings.TRAINING_EPISODES_PER_EPOCH, settings.VALIDATION_EPISODES_PER_EPOCH,
+                        settings.GATHER_STATISTICS)
     log.info('Experiment %s end. Results at %s', experiment_id, results_path)
 
     samples_file_path = os.path.join(results_path, 'samples.pickle')

@@ -1,11 +1,11 @@
 import random
 
-from rl.agent import Agent
-from rl.environment import Environment
+from rl.agent.baseagent import BaseAgent
+from rl.environment.goalenvironment import GoalEnvironment
 
 
 class TurnBasedMatch(object):
-    def __init__(self, left: Agent, right: Agent):
+    def __init__(self, left: BaseAgent, right: BaseAgent):
         assert left is not None
         assert right is not None
         assert left.identifier != right.identifier
@@ -13,7 +13,7 @@ class TurnBasedMatch(object):
         self._left = left
         self._right = right
 
-    def play(self, environment: Environment, **metadata):
+    def play(self, environment: GoalEnvironment, **metadata):
         # Generate what the order of playing will be. This ensures agents have both knowledge in how to play when the
         # game just started, and when the game already has at least one move in
         players = [self._left, self._right]
